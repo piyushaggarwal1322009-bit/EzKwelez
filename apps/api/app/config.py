@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = Field(default="", alias="SUPABASE_SERVICE_ROLE_KEY")
     database_url: str = Field(default="", alias="DATABASE_URL")
 
+    # Telemetry Providers (mock by default)
+    occupancy_provider: str = Field(default="mock", alias="OCCUPANCY_PROVIDER")
+    connectivity_provider: str = Field(default="mock", alias="CONNECTIVITY_PROVIDER")
+
     # AI Engine Provider (mock by default)
     ai_provider: str = Field(default="mock", alias="AI_PROVIDER")
     ai_api_key: str = Field(default="", alias="AI_API_KEY")
