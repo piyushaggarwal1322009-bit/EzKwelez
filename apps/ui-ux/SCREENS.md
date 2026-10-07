@@ -116,48 +116,49 @@
 
 ---
 
-### 3.1 Active Incidents
+### 3. Incidents Area
 
+> **Modular Screen Spec:** See [`screens/incidents.md`](./screens/incidents.md) for exhaustive layout diagrams, root cause states, 4-tier cascade models, and confidence frameworks.
+
+#### 3.1 Active Incidents Queue
 - **Product Area:** `3. Incidents` (Sub-view: `Active Incidents Queue`)
-- **User Goal:** Triage, filter, and manage all ongoing campus disruptions in a centralized queue.
+- **User Goal:** Triage, prioritize, and manage all ongoing campus disruptions in a centralized queue sorted by severity and impact score.
 - **Primary Question Answered:** *"What are all active disruptions across the campus and what is their triage priority?"*
 - **4-Level Information Hierarchy:**
-  - **Level 1 (Top Takeaway):** Queue Count & Severity Breakdown (`1 Critical · 2 Moderate · 0 Minor`).
-  - **Level 2 (Contextual Explanation):** Incident List sorted by impact score with elapsed time and direct target entity tags.
-  - **Level 3 (Actions):** `[ Create New Incident ]`, `[ Filter by Severity / Building ]`, `[ Batch Resolve ]`.
+  - **Level 1 (Top Takeaway):** Queue Count & Severity Breakdown (`1 Critical · 1 High · 1 Medium · 0 Low · 0 Info` · `482 Total Displaced Students`).
+  - **Level 2 (Contextual Explanation):** Prioritized Incident List sorted by impact score with elapsed time, confidence badges (`Confirmed` / `Estimated`), and direct target entity tags.
+  - **Level 3 (Actions):** `[ View Impact / Blast Radius ]`, `[ Review Recovery Plans ]`, `[ Filter by Severity / Building ]`.
   - **Level 4 (Inspection Detail):** Quick-inspect incident preview drawer and audit history link.
-- **Important Components:** `<IncidentCard>`, `<DataTable>`, `<SeverityPill>`, `<FilterBar>`, `<SearchInput>`.
+- **Important Components:** `<IncidentTriageCard>`, `<SeverityPill>`, `<ImpactKpiStrip>`, `<FilterToolbar>`, `<DataTable>`.
 - **Responsive Behavior:** Dense data table with inline actions on desktop; stacked incident cards on mobile.
 
 ---
 
-### 3.2 Incident Details
-
+#### 3.2 Incident Details & Root Cause
 - **Product Area:** `3. Incidents` (Sub-view: `Incident Details`)
-- **User Goal:** Conduct an exhaustive deep dive into a specific disruption, its root cause, timeline, and affected stakeholders.
+- **User Goal:** Conduct an exhaustive deep dive into a specific disruption, its root cause (CONFIRMED vs. SUSPECTED), timeline, and affected stakeholders.
 - **Primary Question Answered:** *"What exactly went wrong, when did it happen, and what is the full scope of disruption?"*
 - **4-Level Information Hierarchy:**
-  - **Level 1 (Top Takeaway):** Pinned Incident Header (Title, Severity Pill, Direct Target, Status, Elapsed Time).
-  - **Level 2 (Contextual Explanation):** Direct vs. Indirect Impact breakdown scorecard & chronological audit timeline.
-  - **Level 3 (Actions):** `[ View Blast Radius ]`, `[ Generate Recovery Plans ]`, `[ Broadcast Student Notice ]`.
-  - **Level 4 (Inspection Detail):** Entity dependency tree list and AI Analyst contextual explanation.
-- **Important Components:** `<MetricCard>`, `<Timeline>`, `<BadgeGroup>`, `<AIAnalystPanel>`, `<Button>`.
-- **Responsive Behavior:** 2-column layout (Dossier + AI Panel) on desktop; single-column narrative scroll on mobile.
+  - **Level 1 (Top Takeaway):** Pinned Incident Header (Title, Severity Pill, Direct Target, Status `INVESTIGATING`, Elapsed Time `24m`).
+  - **Level 2 (Contextual Explanation):** Root Cause Card (Confirmed/Suspected/Unknown) + 4-KPI Impact Summary (438 Students, 7 Rooms, 3 Services, ~90m Duration) + Chronological Timeline.
+  - **Level 3 (Actions):** `[ View Blast Radius → ]`, `[ Review Generated Recovery Plans (3) → ]`, `[ "What if +60m?" Simulation Shortcut ]`.
+  - **Level 4 (Inspection Detail):** Grounding Evidence Chips (`[ 4 Labs Incompatible ]`) and AI Context Explanation Panel.
+- **Important Components:** `<PinnedIncidentContextBar>`, `<RootCauseCard>`, `<ImpactKpiStrip>`, `<IncidentTimeline>`, `<AIAnalystPanel>`.
+- **Responsive Behavior:** 2-column layout (Dossier + Action/AI Panel) on desktop; single-column narrative scroll on mobile.
 
 ---
 
-### 3.3 Impact / Blast Radius
-
+#### 3.3 Impact / Blast Radius
 - **Product Area:** `3. Incidents` (Sub-view: `Impact / Blast Radius`)
-- **User Goal:** Trace and visualize the precise cascade of consequences triggered by an incident across campus layers.
+- **User Goal:** Trace and visualize the precise cascade of consequences triggered by an incident across 4 campus layers (Root -> Physical -> Infrastructure -> Human).
 - **Primary Question Answered:** *"How does this failure propagate from the root target to classes, equipment, and people?"*
 - **4-Level Information Hierarchy:**
-  - **Level 1 (Top Takeaway):** Disruption Severity Score (0–100 scale) & Total Displaced Students Metric.
-  - **Level 2 (Contextual Explanation):** Multi-tier Cascade Graph (Root -> Infrastructure -> Rooms -> Schedules -> Cohorts).
-  - **Level 3 (Actions):** `[ Proceed to Recovery Planning ]`, `[ Filter Cascade Depth (Tier 1/2/3) ]`.
+  - **Level 1 (Top Takeaway):** Disruption Severity Score (`98/100 Priority`) & Total Displaced Students Metric (`438 Confirmed`).
+  - **Level 2 (Contextual Explanation):** 4-Tier Multi-layer Cascade Graph (Root -> Building B -> Wi-Fi/HVAC -> Disrupted Classes).
+  - **Level 3 (Actions):** `[ Proceed to Recovery Planning → ]`, `[ Filter Cascade Depth (Tier 1/2/3) ]`, `[ Toggle Accessible Table ]`.
   - **Level 4 (Inspection Detail):** Affected entities structured `<DataTable>` with CSV export trigger.
-- **Important Components:** `<BlastRadiusVisualizer>`, `<CascadeTreeNode>`, `<DataTable>`, `<ScoreBadge>`.
-- **Responsive Behavior:** Split-screen (Graph left, Table right) on desktop; tabbed view switcher on mobile.
+- **Important Components:** `<BlastRadiusVisualizer>`, `<CascadeTreeNode>`, `<DataTable>`, `<ScoreBadge>`, `<ConfidencePill>`.
+- **Responsive Behavior:** Split-screen (Graph left, Table right) on desktop; expandable tree + bottom modal on mobile.
 
 ---
 

@@ -76,15 +76,26 @@
 
 ---
 
-## 5. Incident Selection & Blast Radius Exploration
+## 5. Incident Selection, Root Cause Diagnosis & Blast Radius Exploration
 
-### 5.1 Incident-to-Map Synchronization
-- Selecting an incident in the feed immediately centers the interactive campus map on the incident's target entity and highlights downstream affected rooms.
+### 5.1 Incident Queue Triage & Sorting
+- **Priority Sorting:** Queue automatically orders disruptions by `Severity > Impact Headcount > Urgency`. Selecting any sort header cycles deterministically without losing active filters.
+- **Quick-Inspect Drawer:** Clicking a queue row outside action buttons opens a slide-over preview showing the 4-KPI impact strip and root cause status without unloading the queue view.
 
-### 5.2 Blast Radius Cascade Traversal
-- **Hover Interaction:** Hovering over a dependency node highlights its immediate upstream parents (what powers it) and downstream children (what depends on it).
-- **Tier Depth Slider:** Operators can toggle between `Tier 1 (Direct Failures)`, `Tier 2 (Secondary Cascades)`, and `Tier 3 (Systemic Constraints)`.
-- **Node Click:** Opens the entity drawer showing scheduled classes, current occupant counts, and equipment inventory.
+### 5.2 Incident-to-Map & Spatial Context Synchronization
+- Selecting an incident in the feed immediately synchronizes the global campus map to center on the target entity and highlights downstream affected facilities.
+
+### 5.3 Root Cause Classification & Grounded Diagnosis
+- **State Toggling:** Operators with command roles can transition root cause from `SUSPECTED` to `CONFIRMED` upon field technician acknowledgement.
+- **AI Narrative Separation:** Machine-verified telemetry facts appear in structured badges; AI diagnostic reasoning appears in a dedicated assistant container with explicit grounding chips.
+
+### 5.4 Blast Radius 4-Tier Cascade Traversal
+- **Interactive DAG Exploration:** Hovering over any node highlights its upstream parents (sources) and downstream children (dependencies) with animated pulse rings.
+- **Tier Depth Filtering:** Operators can filter the cascade canvas by `Tier 1 (Direct Facilities)`, `Tier 2 (Dependent Services)`, and `Tier 3 (Human Schedules)`.
+- **Node Detail Slide-Over:** Clicking any node reveals room numbers, scheduled courses, enrolled students, and offline hardware IDs.
+
+### 5.5 Incident-to-Simulation Shortcut
+- The action panel includes a 1-click counterfactual scenario trigger: `[ "What if power outage extends +60m?" ]`. Clicking transfers active incident parameters directly into the What-If simulation engine without manual data re-entry.
 
 ---
 

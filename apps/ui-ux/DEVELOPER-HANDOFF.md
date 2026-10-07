@@ -323,6 +323,69 @@ export interface LocationTelemetrySummary {
 }
 ```
 
+### 6.3 Incident Experience Suite (`app/(operator)/incidents/`)
+For Phase 4, Ishu and Tanisha should structure the Incident Experience following [`screens/incidents.md`](./screens/incidents.md):
+
+```text
+apps/web/src/
+├── app/(operator)/incidents/
+│   ├── page.tsx                         # 3.1 Active Incidents Queue
+│   └── [incidentId]/
+│       ├── page.tsx                     # 3.2 Incident Details & Root Cause Dossier
+│       └── blast-radius/
+│           └── page.tsx                 # 3.3 Blast Radius Cascade Inspector
+└── features/incidents/
+    ├── components/
+    │   ├── PinnedIncidentContextBar.tsx # Persistent top context bar across sub-routes
+    │   ├── IncidentTriageCard.tsx       # Queue card with severity badge & action CTAs
+    │   ├── RootCauseCard.tsx            # Confirmed vs Suspected diagnosis panel
+    │   ├── ImpactKpiStrip.tsx           # 4-card metric group (font-mono tabular-nums)
+    │   ├── BlastRadiusVisualizer.tsx    # Node-link DAG visualizer + Table dual-view
+    │   ├── IncidentTimeline.tsx         # Chronological audit stream (Observed/Calculated)
+    │   └── IncidentActionPanel.tsx      # Recovery & simulation entry triggers
+    └── hooks/
+        ├── useActiveIncidents.ts        # Triage queue fetching & filter hook
+        ├── useIncidentDetails.ts        # Full dossier state hook
+        └── useBlastRadiusGraph.ts       # 4-tier cascade graph & tree traversal hook
+```
+
+#### TypeScript Contract Types (Presentation Only):
+```typescript
+export type IncidentSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFORMATIONAL';
+export type IncidentLifecycleStatus = 
+  | 'DETECTED' 
+  | 'INVESTIGATING' 
+  | 'IMPACT_ASSESSED' 
+  | 'MITIGATION_IN_PROGRESS' 
+  | 'RECOVERING' 
+  | 'RESOLVED' 
+  | 'CLOSED';
+export type RootCauseCertainty = 'CONFIRMED' | 'SUSPECTED' | 'UNKNOWN';
+export type CascadeTier = 0 | 1 | 2 | 3;
+
+export interface IncidentSummaryContract {
+  incidentId: string;
+  incidentTitle: string;
+  severity: IncidentSeverity;
+  status: IncidentLifecycleStatus;
+  primaryLocation: string;
+  detectedAt: string;
+  elapsedMinutes: number;
+  rootCause: {
+    title: string;
+    certainty: RootCauseCertainty;
+    diagnosticNote?: string;
+  };
+  impact: {
+    displacedStudents: number;
+    impactedRooms: number;
+    dependentServicesCount: number;
+    estimatedDurationMinutes: number;
+    confidence: 'CONFIRMED' | 'ESTIMATED' | 'PROJECTED';
+  };
+}
+```
+
 ---
 
 ## 7. Design Review & PR Quality Gate

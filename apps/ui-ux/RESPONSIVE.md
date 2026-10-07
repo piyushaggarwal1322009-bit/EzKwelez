@@ -82,6 +82,15 @@ DESKTOP (>= 1280px)        LAPTOP (1024-1279px)       TABLET (768-1023px)       
   4. Collapsible accordion group for all healthy/normal buildings (`16 Healthy Facilities ▼`).
   5. 3-segment sub-view tab docked above bottom nav (`Overview` | `Occupancy` | `Connectivity`).
 
+### 4.6 Incident Dossier & Blast Radius Cascade Adaptation
+- **Desktop (>= 1280px):** Split 2-column layout (65% Dossier, 35% Action & AI Panel); full interactive DAG canvas with node traversal.
+- **Tablet (768px – 1023px):** Stacked single column; 2x2 Impact KPI grid; zoomable DAG with slide-over inspection drawers.
+- **Mobile (< 768px):** Prioritized Crisis Stream:
+  1. Sticky top status bar with severity badge and student count (`[CRITICAL] Building B · 438 Displaced`).
+  2. Prominent primary CTA button: `[ View Recovery Plans → ]`.
+  3. Blast Radius DAG automatically converts to an **Expandable 4-Tier Hierarchy Tree** (`<ol role="tree">`) or accessible data table.
+  4. Chronological timeline collapses into a modal bottom sheet.
+
 ---
 
 ## 5. Responsive Validation Checklist
