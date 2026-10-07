@@ -194,18 +194,21 @@
 
 ---
 
-### 5.1 What-If Simulation
+### 5. Simulation Area
 
+> **Modular Screen Spec:** See [`screens/simulation.md`](./screens/simulation.md) for exhaustive scenario controls, baseline vs projected scorecards, delta direction tokens, and debounced calculation contracts.
+
+#### 5.1 What-If Scenario Sandbox
 - **Product Area:** `5. Simulation` (Sub-view: `What-If Scenario Sandbox`)
-- **User Goal:** Test counterfactual variables (duration changes, attendee spikes, gate closures) before executing decisions.
-- **Primary Question Answered:** *"What happens to campus congestion and room availability if this outage lasts 180 minutes instead of 90?"*
+- **User Goal:** Test counterfactual assumptions (recovery duration extension 15m–240m, crowd multipliers 1.0x–2.5x, resource outages) to observe projected impact deltas before executing decisions.
+- **Primary Question Answered:** *"What happens across campus facilities and student displacement if recovery takes 60 minutes longer?"*
 - **4-Level Information Hierarchy:**
-  - **Level 1 (Top Takeaway):** Projected Impact Delta (`-95% Displaced Students`, `+30m delay`) in Sky-Blue Simulation Mode.
-  - **Level 2 (Contextual Explanation):** Before vs. After split comparison diff & simulated blast radius map overlay.
-  - **Level 3 (Actions):** `[ Run Simulation ]`, `[ Apply Simulated Parameters to Active Incident ]`, `[ Reset to Baseline ]`.
-  - **Level 4 (Inspection Detail):** Granular scenario sliders (Outage duration: 15m–240m, Crowd multiplier: 1.0x–2.5x).
-- **Important Components:** `<SimulationControlSlider>`, `<BeforeAfterDiffCard>`, `<DecisionMap>`, `<Button>`.
-- **Responsive Behavior:** Left rail controls + right real-time diff on desktop; top accordion controls + stacked diff on mobile.
+  - **Level 1 (Top Takeaway):** Sky-Blue Simulation Safety Banner (*"SIMULATION SANDBOX · Advisory Mode"*) + Projected Impact Delta Scorecard (Baseline 84 vs Projected 176 Students · `↑ +92 Displaced`).
+  - **Level 2 (Contextual Explanation):** Controlled Assumption Sliders (Recovery Work Duration: 15m–240m, Crowd Multiplier: 1.0x–2.5x) + Data Provenance Breakdown (Observed, Assumed, Projected).
+  - **Level 3 (Actions):** `[ Run Simulation ]`, `[ Reset to Baseline ]`, `[ Branch Recovery Plan with Scenario Assumptions → ]`.
+  - **Level 4 (Inspection Detail):** Multi-Scenario Comparison Matrix (Baseline vs Scenario A vs Scenario B) and AI Grounding Rationale Panel.
+- **Important Components:** `<SimulationSafetyBanner>`, `<ScenarioControlSlider>`, `<BaselineVsProjectedCard>`, `<DirectionalDeltaBadge>`, `<MultiScenarioMatrix>`.
+- **Responsive Behavior:** 2-column sandbox (Controls left, Scorecard & Matrix right) on desktop; single-column stacked sliders and bottom sheet comparison on mobile.
 
 ---
 

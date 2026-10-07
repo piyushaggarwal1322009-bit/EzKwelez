@@ -121,13 +121,28 @@
 
 ## 7. What-If Simulation Interactions
 
-### 7.1 Parameter Adjustment
-- **Slider Interaction:** Dragging the outage duration slider (15m–240m) or crowd multiplier (1.0x–2.5x) provides immediate visual feedback.
-- **Debounced Recalculation:** The UI displays a subtle "Calculating projection..." indicator, updating projected blast radius and displaced student counts within <500ms.
-- **Reset Trigger:** A "Reset to Baseline" button allows operators to clear experimental adjustments with a single click.
+### 7.1 Multi-Modal Parameter Adjustment & Companion Inputs
+- **Analog + Numeric Synchronization:** Dragging the recovery duration slider (15m–240m) immediately updates the adjacent numeric text box (`<input type="number">`), and typing a numeric value smoothly repositions the slider thumb.
+- **Preset Buttons:** Quick buttons `[ Baseline (38m) ]`, `[ +30m (68m) ]`, `[ +60m (98m) ]`, and `[ Max Window (240m) ]` set target assumptions in one click.
 
-### 7.2 Counterfactual Comparison
-- The simulation screen provides a split view toggle between `Before vs. After (Split)` and `Overlay Difference (Heatmap)`.
+### 7.2 Debounced Recalculation & State Tickers
+- **Debounced Execution:** Slider adjustments update the client UI immediately, but backend physics recomputation debounces for 500ms after the last input.
+- **Pending Recalculation Badge:** While debouncing, the projected outcome panel displays an amber `[ Pending Recalculation ]` status badge to prevent operators from interpreting stale outputs as fresh data.
+
+### 7.3 Directional Delta Calculation & Non-Color Semantics
+- **Explicit Delta Tags:** Delta values always couple signed numerals with vector arrows:
+  - `↑ +92 Students` (Deterioration / Warning)
+  - `↓ -54 Students` (Improvement / Success)
+  - `→ 0 Delta` (Neutral baseline match)
+- Deltas compute against the active baseline in real-time.
+
+### 7.4 Reset to Baseline & Safeguard
+- Clicking `[ Reset to Baseline ]` restores all assumptions to current active recovery parameters.
+- If more than 3 assumptions were modified, a lightweight confirmation toast confirms: *"Reset all scenario assumptions to active baseline?"*.
+
+### 7.5 Advisory Simulation Safety & Recovery Branching
+- **Advisory Isolation:** Persistent sky-blue top banner clearly states: *"SIMULATION SANDBOX · No live campus mutations are made."*
+- **Branching Action:** Clicking `[ Branch Recovery Plan with Scenario Assumptions → ]` routes to `/recovery` with pre-loaded assumptions and launches the **Guarded Two-Step Approval Flow** to ensure consequential interventions are verified before live broadcast.
 
 ---
 

@@ -91,6 +91,15 @@ DESKTOP (>= 1280px)        LAPTOP (1024-1279px)       TABLET (768-1023px)       
   3. Blast Radius DAG automatically converts to an **Expandable 4-Tier Hierarchy Tree** (`<ol role="tree">`) or accessible data table.
   4. Chronological timeline collapses into a modal bottom sheet.
 
+### 4.7 What-If Simulation Sandbox Responsive Adaptation
+- **Desktop (>= 1280px):** 2-column sandbox (Left: Sliders & presets; Right: Scorecard, directional delta pills, AI grounding panel, multi-scenario matrix).
+- **Tablet (768px – 1023px):** Stacked single column; scenario controls pinned above projected scorecard; comparison matrix in a slide-over drawer.
+- **Mobile (< 768px):** Focused Scenario Stream:
+  1. Top sticky status banner with projected headcounts (`Projected: 176 Students · ↑ +92 Delta`).
+  2. Primary duration slider with companion numeric input and touch target thumb (28px).
+  3. Action buttons `[ Run Simulation ]` and `[ Reset to Baseline ]` docked above bottom navigation.
+  4. Multi-scenario comparison matrix converts to an expandable bottom sheet modal.
+
 ---
 
 ## 5. Responsive Validation Checklist

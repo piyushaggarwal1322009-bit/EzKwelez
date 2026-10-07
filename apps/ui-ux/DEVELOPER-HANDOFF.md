@@ -444,6 +444,80 @@ export interface RecoveryPlanContract {
 }
 ```
 
+### 6.5 What-If Simulation Sandbox (`app/(operator)/simulation/` & `app/(operator)/incidents/[incidentId]/simulation/`)
+For Phase 6, Ishu and Tanisha should structure the What-If Simulation sandbox following [`screens/simulation.md`](./screens/simulation.md):
+
+```text
+apps/web/src/
+├── app/(operator)/simulation/
+│   └── page.tsx                         # Standalone Sandbox
+├── app/(operator)/incidents/[incidentId]/
+│   └── simulation/
+│       └── page.tsx                     # Contextual Incident Sandbox
+└── features/simulation/
+    ├── components/
+    │   ├── SimulationSafetyBanner.tsx   # Sky-blue advisory mode header
+    │   ├── ScenarioControlSlider.tsx    # Slider + companion numeric input
+    │   ├── BaselineVsProjectedCard.tsx  # Side-by-side outcome scorecard
+    │   ├── DirectionalDeltaBadge.tsx    # Directional delta pill (↑/↓/→)
+    │   ├── MultiScenarioMatrix.tsx      # Tabular scenario comparison table
+    │   ├── SimulationProvenanceCard.tsx # Observed vs Assumed vs Projected breakdown
+    │   └── ScenarioHistoryDrawer.tsx    # Lightweight recent scenario stream
+    └── hooks/
+        ├── useSimulationState.ts        # Debounced slider & recalculation state hook
+        └── useScenarioComparison.ts     # Multi-scenario comparison state hook
+```
+
+#### TypeScript Contract Types (Presentation Only):
+```typescript
+export type SimulationStatus = 
+  | 'UNTOUCHED' 
+  | 'MODIFIED' 
+  | 'CALCULATING' 
+  | 'CALCULATED' 
+  | 'STALE' 
+  | 'INVALID' 
+  | 'UNAVAILABLE';
+
+export interface SimulationParameters {
+  recoveryWorkDurationMinutes: number; // 15-240m
+  crowdMultiplier: number;             // 1.0 - 2.5x
+  substationMarginAvailable: boolean;
+  generatorOnline: boolean;
+}
+
+export interface SimulationOutcomeContract {
+  scenarioId: string;
+  scenarioName: string;
+  status: SimulationStatus;
+  baseline: {
+    recoveryMinutes: number;
+    displacedStudents: number;
+    lockedRoomsCount: number;
+    eveningExamAffected: boolean;
+  };
+  projected: {
+    recoveryMinutes: number;
+    displacedStudents: number;
+    lockedRoomsCount: number;
+    eveningExamAffected: boolean;
+    operationalRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+  };
+  deltas: {
+    durationDeltaMinutes: number; // e.g. +60
+    headcountDelta: number;       // e.g. +92
+    roomDelta: number;            // e.g. +2
+  };
+  provenance: {
+    observedStudents: number;
+    assumedOffsetMinutes: number;
+    calculatedOfflineHours: number;
+  };
+  confidence: ConfidenceTier;
+  aiGroundedExplanation: string;
+}
+```
+
 ---
 
 ## 7. Design Review & PR Quality Gate
