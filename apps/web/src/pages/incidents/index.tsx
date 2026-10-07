@@ -309,24 +309,28 @@ export default function IncidentsPage() {
                 </div>
 
                 {/* Direct Action triggers */}
-                <div className="flex items-center gap-2 pt-1">
-                  <Link href={`/incidents/${incident.id}`}>
-                    <Button variant="outline" size="sm" className="text-xs">
-                      Inspect Timeline & Audit
-                    </Button>
-                  </Link>
-                  {incident.rootNodeId && (
-                    <Link href={`/impact?incidentId=${incident.id}&rootNodeId=${incident.rootNodeId}`}>
-                      <Button variant="secondary" size="sm" className="text-xs text-cyan-300 gap-1.5">
-                        <AlertOctagon className="w-3.5 h-3.5" />
-                        Analyze Blast Radius
+                <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Link href={`/incidents/${incident.id}`}>
+                      <Button variant="primary" size="sm" className="text-xs gap-1.5 bg-red-600 hover:bg-red-500 shadow-sm">
+                        <ShieldAlert className="w-3.5 h-3.5" />
+                        Open Incident Command &rarr;
                       </Button>
                     </Link>
-                  )}
+                    {incident.rootNodeId && (
+                      <Link href={`/impact?incidentId=${incident.id}&rootNodeId=${incident.rootNodeId}`}>
+                        <Button variant="secondary" size="sm" className="text-xs text-cyan-300 gap-1.5 border-cyan-800/80 bg-cyan-950/40 hover:bg-cyan-900/50">
+                          <AlertOctagon className="w-3.5 h-3.5" />
+                          Blast Radius
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+
                   <Link href={`/recovery?incidentId=${incident.id}`}>
-                    <Button variant="primary" size="sm" className="text-xs gap-1.5">
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5 text-amber-300 border-amber-800/60 hover:bg-amber-950/40">
                       <Sparkles className="w-3.5 h-3.5" />
-                      Recovery Decision Support
+                      Recovery Decision Support &rarr;
                     </Button>
                   </Link>
                 </div>

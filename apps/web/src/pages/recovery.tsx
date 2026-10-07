@@ -38,6 +38,7 @@ import {
   UserCheck,
   Zap,
 } from "lucide-react";
+import { DecisionLoopBanner, RecoveryComparisonTable } from "@/components/decision";
 
 export default function RecoveryPlanningPage() {
   const router = useRouter();
@@ -163,6 +164,12 @@ export default function RecoveryPlanningPage() {
         }
       />
 
+      <DecisionLoopBanner
+        currentStep="recovery"
+        incidentId={selectedIncidentId}
+        className="mb-6"
+      />
+
       {/* Incident Switcher */}
       <Card className="mb-6 border-slate-800 bg-slate-900/60">
         <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -255,66 +262,57 @@ export default function RecoveryPlanningPage() {
             </Alert>
           )}
 
+          {/* Top Recommendation Highlight Card */}
+          {plan.options && plan.options.length > 0 && (
+            <Card className="border-blue-900/60 bg-gradient-to-r from-blue-950/40 to-slate-900/80">
+              <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="border-blue-500/50 text-blue-400 font-mono text-[10px]">
+                      TOP RECOMMENDATION • RANK #{plan.options[0].rank || 1}
+                    </Badge>
+                    {getFeasibilityBadge(plan.options[0].feasibility)}
+                  </div>
+                  <h3 className="text-base font-semibold text-white">{plan.options[0].title}</h3>
+                  <p className="text-xs text-slate-300 max-w-2xl">{plan.options[0].description}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedOption(plan.options[0]);
+                      setIsCompareMode(!isCompareMode);
+                    }}
+                    className="text-xs flex-1 sm:flex-initial"
+                  >
+                    {isCompareMode ? "Exit Matrix" : "Compare Matrix"}
+                  </Button>
+                  <Link
+                    href={`/simulation?incidentId=${selectedIncidentId}&optionId=${plan.options[0].id}&planId=${plan.id}`}
+                    className="flex-1 sm:flex-initial"
+                  >
+                    <Button variant="primary" size="sm" className="w-full text-xs gap-1.5 bg-blue-600">
+                      Simulate Option Drill <ArrowRight className="w-3.5 h-3.5" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Comparison Mode vs Standard Inspector */}
           {isCompareMode ? (
-            /* Multi-Option Comparison Grid */
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {plan.options.map((opt) => (
-                  <Card
-                    key={opt.id}
-                    className="flex flex-col justify-between border-slate-800 bg-slate-900/80 p-5 space-y-4"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <Badge variant="outline" className="font-mono text-[10px]">
-                          Rank #{opt.rank || "-"}
-                        </Badge>
-                        {getFeasibilityBadge(opt.feasibility)}
-                      </div>
-                      <h4 className="text-sm font-semibold text-white leading-snug">{opt.title}</h4>
-                      <p className="text-xs text-slate-400 mt-2">{opt.description}</p>
-                    </div>
-
-                    <div className="space-y-3 pt-3 border-t border-slate-800 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Recovery Time:</span>
-                        <span className="font-mono font-semibold text-white">
-                          {opt.estimatedRecoveryTime.value} {opt.estimatedRecoveryTime.unit}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Impact Reduction:</span>
-                        <span className="font-mono font-semibold text-emerald-400">
-                          {opt.estimatedImpactReduction.estimatedPercent}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Prerequisites:</span>
-                        <span className="font-mono text-slate-300">{opt.prerequisites.length} required</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Operational Risk:</span>
-                        <span className="capitalize text-slate-300">
-                          {opt.risks.length > 0 ? opt.risks[0].severity : "Low"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedOption(opt);
-                        setIsCompareMode(false);
-                      }}
-                      className="w-full text-xs gap-1"
-                    >
-                      Inspect Option &rarr;
-                    </Button>
-                  </Card>
-                ))}
-              </div>
+            /* Multi-Option Comparison Grid & Matrix */
+            <div className="space-y-6">
+              <RecoveryComparisonTable
+                plan={plan}
+                incidentId={selectedIncidentId}
+                selectedOptionId={selectedOption?.id}
+                onSelectOption={(opt) => {
+                  setSelectedOption(opt);
+                }}
+              />
             </div>
           ) : (
             /* Option List & Detailed Inspector */
@@ -423,6 +421,21 @@ export default function RecoveryPlanningPage() {
                               {selectedOption.confidence}
                             </span>
                           </div>
+                        </div>
+
+                        {/* Direct Simulation Drill CTA */}
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-blue-950/40 border border-blue-900/60 mt-3">
+                          <div>
+                            <span className="font-semibold text-white block">Drill Verification</span>
+                            <span className="text-[11px] text-slate-400">Validate this strategy against counterfactual campus loads</span>
+                          </div>
+                          <Link
+                            href={`/simulation?incidentId=${selectedIncidentId}&optionId=${selectedOption.id}&planId=${plan.id}`}
+                          >
+                            <Button size="sm" variant="primary" className="gap-1.5 text-xs bg-blue-600">
+                              Simulate Option Drill <ArrowRight className="w-3.5 h-3.5" />
+                            </Button>
+                          </Link>
                         </div>
                       </CardContent>
                     </Card>

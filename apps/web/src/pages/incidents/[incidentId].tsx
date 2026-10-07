@@ -14,6 +14,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { incidentService } from "@/services/incident-service";
 import { campusService } from "@/services/campus-service";
 import { graphService } from "@/services/graph-service";
+import { DecisionLoopBanner, IncidentLifecycleStepper } from "@/components/decision";
 import {
   CampusLocation,
   DependencyNode,
@@ -222,18 +223,26 @@ export default function IncidentDetailPage() {
             </Button>
             {incident.rootNodeId && (
               <Link href={`/impact?incidentId=${incident.id}&rootNodeId=${incident.rootNodeId}`}>
-                <Button variant="secondary" size="sm" className="gap-1.5 text-xs text-cyan-300">
-                  <AlertOctagon className="w-3.5 h-3.5" /> Blast Radius
+                <Button variant="secondary" size="sm" className="gap-1.5 text-xs text-cyan-300 border-cyan-800/80 bg-cyan-950/40 hover:bg-cyan-900/50">
+                  <AlertOctagon className="w-3.5 h-3.5" /> Blast Radius &rarr;
                 </Button>
               </Link>
             )}
             <Link href={`/recovery?incidentId=${incident.id}`}>
               <Button variant="primary" size="sm" className="gap-1.5 text-xs">
-                <Sparkles className="w-3.5 h-3.5" /> Recovery Options
+                <Sparkles className="w-3.5 h-3.5" /> Recovery Options &rarr;
               </Button>
             </Link>
           </div>
         }
+      />
+
+      {/* Decision Workflow Banner (Golden Path Progress Indicator) */}
+      <DecisionLoopBanner
+        currentStep="incident"
+        incidentId={incident.id}
+        rootNodeId={incident.rootNodeId}
+        className="mb-6"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -241,11 +250,19 @@ export default function IncidentDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Summary Card */}
           <Card>
-            <CardHeader>
-              <CardTitle>Disruption Summary</CardTitle>
-              <CardDescription>Official operational description and classification</CardDescription>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle>Disruption Summary & Lifecycle</CardTitle>
+                <span className="text-[11px] font-mono text-slate-400">
+                  Category: {incident.type.replace("_", " ").toUpperCase()}
+                </span>
+              </div>
+              <CardDescription>Official operational description, classification, and lifecycle resolution progress</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Lifecycle Progress Stepper */}
+              <IncidentLifecycleStepper currentStatus={incident.status} />
+
               <p className="text-sm text-slate-200 leading-relaxed">{incident.description}</p>
 
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-3 border-t border-slate-800 text-xs">

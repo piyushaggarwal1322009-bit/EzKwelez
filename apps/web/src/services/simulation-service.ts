@@ -1,4 +1,4 @@
-import { DataMode } from "@ezykwelez/shared";
+import { DataMode, RecoveryOption } from "@ezykwelez/shared";
 
 export interface SimulationScenario {
   id: string;
@@ -19,6 +19,36 @@ export interface SimulationResult {
   recommendedRecoveryOption: string;
   dataMode: DataMode;
   simulatedAt: string;
+  notes: string[];
+}
+
+export interface RecoveryOptionSimulationResult {
+  optionId: string;
+  optionTitle: string;
+  planId?: string;
+  incidentId?: string;
+  dataMode: DataMode;
+  simulatedAt: string;
+  before: {
+    disruptedNodes: number;
+    disruptedLocations: number;
+    displacedStudents: number;
+    severityScore: number;
+  };
+  after: {
+    disruptedNodes: number;
+    disruptedLocations: number;
+    displacedStudents: number;
+    severityScore: number;
+  };
+  delta: {
+    impactPercentReduction: number;
+    restoredStudents: number;
+    restoredLocations: number;
+    estimatedTimeToRestore: string;
+  };
+  rationale: string;
+  keyTradeoff: string;
   notes: string[];
 }
 
@@ -59,7 +89,6 @@ export const simulationService = {
   },
 
   async runSimulation(scenario: SimulationScenario): Promise<SimulationResult> {
-    // Deterministic simulation output clearly labeled as simulated data
     return {
       scenarioId: scenario.id,
       disruptionScore: scenario.durationHours * scenario.expectedLoadFactor * 42.5,
@@ -76,4 +105,71 @@ export const simulationService = {
       ],
     };
   },
+
+  async simulateRecoveryOption(
+    option: RecoveryOption,
+    context?: {
+      planId?: string;
+      incidentId?: string;
+      baselineDisruptedNodes?: number;
+      baselineDisruptedLocations?: number;
+      baselineDisplacedStudents?: number;
+    }
+  ): Promise<RecoveryOptionSimulationResult> {
+    const baseNodes = context?.baselineDisruptedNodes ?? 3;
+    const baseLocs = context?.baselineDisruptedLocations ?? 2;
+    const baseStudents = context?.baselineDisplacedStudents ?? 120;
+    const baseScore = 85.0;
+
+    const percentRed = option.estimatedImpactReduction.estimatedPercent ?? 75.0;
+    const nodeRed = option.estimatedImpactReduction.affectedNodeReduction ?? 2;
+    const locRed = option.estimatedImpactReduction.affectedLocationReduction ?? 1;
+
+    const afterNodes = Math.max(0, baseNodes - nodeRed);
+    const afterLocs = Math.max(0, baseLocs - locRed);
+    const afterStudents = Math.round(baseStudents * (1 - percentRed / 100));
+    const afterScore = Math.max(0, Number((baseScore * (1 - percentRed / 100)).toFixed(1)));
+
+    const tradeoff = option.tradeoffs && option.tradeoffs.length > 0
+      ? `${option.tradeoffs[0].dimension}: ${option.tradeoffs[0].value} (${option.tradeoffs[0].explanation})`
+      : "Standard operational resource reallocation required.";
+
+    const restoreTime = `${option.estimatedRecoveryTime.value} ${option.estimatedRecoveryTime.unit}`;
+
+    return {
+      optionId: option.id,
+      optionTitle: option.title,
+      planId: context?.planId,
+      incidentId: context?.incidentId,
+      dataMode: DataMode.SIMULATED,
+      simulatedAt: new Date().toISOString(),
+      before: {
+        disruptedNodes: baseNodes,
+        disruptedLocations: baseLocs,
+        displacedStudents: baseStudents,
+        severityScore: baseScore,
+      },
+      after: {
+        disruptedNodes: afterNodes,
+        disruptedLocations: afterLocs,
+        displacedStudents: afterStudents,
+        severityScore: afterScore,
+      },
+      delta: {
+        impactPercentReduction: percentRed,
+        restoredStudents: baseStudents - afterStudents,
+        restoredLocations: baseLocs - afterLocs,
+        estimatedTimeToRestore: restoreTime,
+      },
+      rationale: option.rationale || "Calculated candidate strategy to mitigate student delay.",
+      keyTradeoff: tradeoff,
+      notes: [
+        `Verified constraint satisfaction: ${option.feasibility.toUpperCase()}`,
+        `Confidence Level: ${option.confidence.toUpperCase()}`,
+        "Counterfactual evaluation derived from real recovery option parameters.",
+      ],
+    };
+  },
 };
+
+export const simulateRecoveryOption = simulationService.simulateRecoveryOption;

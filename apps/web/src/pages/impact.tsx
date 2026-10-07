@@ -15,6 +15,7 @@ import { impactService } from "@/services/impact-service";
 import { graphService } from "@/services/graph-service";
 import { incidentService } from "@/services/incident-service";
 import { InteractiveDependencyGraph } from "@/components/graph";
+import { DecisionLoopBanner } from "@/components/decision";
 import {
   Criticality,
   DataMode,
@@ -137,6 +138,15 @@ export default function ImpactAnalysisPage() {
             )}
           </div>
         }
+      />
+
+      {/* Decision Workflow Banner (Golden Path Progress Indicator) */}
+      <DecisionLoopBanner
+        currentStep="impact"
+        incidentId={currentIncident?.id}
+        rootNodeId={selectedRootId}
+        impactId={report?.analysisId}
+        className="mb-6"
       />
 
       {/* Incident Origin Context Banner (Part 10: Incident -> Impact Handoff) */}
