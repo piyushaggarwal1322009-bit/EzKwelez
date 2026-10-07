@@ -1,8 +1,16 @@
-"""FastAPI Routes for Campus Domain and Dependency Graph."""
+"""FastAPI Routes for Campus Facilities, Domain Structure, Dependency Graph, and Live Conditions."""
 
+from datetime import datetime, timezone
 from typing import List, Optional
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from app.api.dependencies import get_current_user, require_admin_or_staff
+
+from app.api.dependencies import (
+    get_condition_service,
+    get_current_user,
+    require_admin_or_staff,
+)
+from app.application.condition_service import ConditionAggregationService
 from app.application.services.campus_service import CampusService
 from app.application.services.dependency_graph_service import DependencyGraphService
 from app.application.services.location_service import LocationService
@@ -19,21 +27,31 @@ from app.domain.campus.exceptions import (
 from app.domain.campus.models import CampusEntityType
 from app.infrastructure.auth.jwt import AuthenticatedUser
 from app.schemas.campus import (
+    ApiErrorDetail,
+    ApiErrorEnvelope,
+    ApiResponseEnvelope,
+    ApiResponseMeta,
     CampusCreateRequest,
     CampusGraphResponseSchema,
+    CampusLocationDTO,
     CampusResponse,
+    CampusSummaryDTO,
+    ConnectivitySnapshotDTO,
     DependencyCreateRequest,
     DependencyResponse,
     DependencyTraversalResponseSchema,
+    LiveCampusConditionsDTO,
+    LocationConditionDTO,
     LocationCreateRequest,
     LocationResponse,
+    OccupancySnapshotDTO,
     ResourceCreateRequest,
     ResourceResponse,
     ServiceCreateRequest,
     ServiceResponse,
 )
 
-router = APIRouter(tags=["Campus & Dependency Graph"])
+router = APIRouter(tags=["Campus Facilities & Graph"])
 
 # Instantiate application services
 campus_service = CampusService()
@@ -43,8 +61,183 @@ service_catalog = ServiceCatalogService()
 graph_service = DependencyGraphService()
 
 
+def generate_meta(data_mode: Optional[str] = None, cached: bool = False) -> ApiResponseMeta:
+    """Helper to construct standard response metadata envelope."""
+    return ApiResponseMeta(
+        requestId=f"req_{uuid.uuid4().hex[:12]}",
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        dataMode=data_mode,
+        cached=cached,
+    )
+
+
 # ==============================================================================
-# 1. CAMPUS ENDPOINTS
+# 1. LIVE CAMPUS CONDITIONS & TELEMETRY ENDPOINTS
+# ==============================================================================
+
+@router.get(
+    "/campus/locations",
+    response_model=ApiResponseEnvelope[List[CampusLocationDTO]],
+    summary="List all campus facilities and rooms (Live View)",
+)
+async def list_live_locations(
+    campus_id: Optional[str] = Query(default=None, alias="campusId"),
+    service: ConditionAggregationService = Depends(get_condition_service),
+):
+    """Retrieve all physical campus facilities, rooms, and labs."""
+    locations = await service.get_all_locations(campus_id)
+    dtos = [
+        CampusLocationDTO(
+            id=loc.id,
+            name=loc.name,
+            type=loc.type,
+            campusId=loc.campus_id,
+            buildingId=loc.building_id,
+            capacity=loc.capacity,
+            metadata=loc.metadata,
+        )
+        for loc in locations
+    ]
+    return ApiResponseEnvelope(
+        data=dtos,
+        meta=generate_meta(),
+    )
+
+
+@router.get(
+    "/campus/conditions",
+    response_model=ApiResponseEnvelope[LiveCampusConditionsDTO],
+    summary="Get aggregated live conditions across all campus facilities",
+)
+async def get_campus_conditions(
+    campus_id: Optional[str] = Query(default=None, alias="campusId"),
+    service: ConditionAggregationService = Depends(get_condition_service),
+):
+    """Retrieve occupancy and connectivity conditions across all campus facilities."""
+    result = await service.get_live_campus_conditions(campus_id)
+
+    location_dtos = [
+        LocationConditionDTO(
+            location=CampusLocationDTO(
+                id=item.location.id,
+                name=item.location.name,
+                type=item.location.type,
+                campusId=item.location.campus_id,
+                buildingId=item.location.building_id,
+                capacity=item.location.capacity,
+                metadata=item.location.metadata,
+            ),
+            occupancy=OccupancySnapshotDTO(
+                locationId=item.occupancy.location_id,
+                currentStudents=item.occupancy.current_students,
+                capacity=item.occupancy.capacity,
+                occupancyPercentage=item.occupancy.occupancy_percentage,
+                status=item.occupancy.status,
+                updatedAt=item.occupancy.updated_at,
+                dataMode=item.occupancy.data_mode,
+            ),
+            connectivity=ConnectivitySnapshotDTO(
+                locationId=item.connectivity.location_id,
+                signalScore=item.connectivity.signal_score,
+                quality=item.connectivity.quality,
+                networkName=item.connectivity.network_name,
+                dbm=item.connectivity.dbm,
+                updatedAt=item.connectivity.updated_at,
+                dataMode=item.connectivity.data_mode,
+            ),
+            overallHealth=item.overall_health,
+        )
+        for item in result.locations
+    ]
+
+    summary_dto = CampusSummaryDTO(
+        totalLocations=result.total_locations,
+        totalOccupancy=result.total_occupancy,
+        totalCapacity=result.total_capacity,
+        averageOccupancyRate=result.average_occupancy_rate,
+        overallSignalScore=result.overall_signal_score,
+    )
+
+    payload = LiveCampusConditionsDTO(
+        locations=location_dtos,
+        summary=summary_dto,
+        dataMode=result.data_mode,
+        generatedAt=result.generated_at,
+    )
+
+    return ApiResponseEnvelope(
+        data=payload,
+        meta=generate_meta(data_mode=result.data_mode.value),
+    )
+
+
+@router.get(
+    "/campus/conditions/{location_id}",
+    response_model=ApiResponseEnvelope[LocationConditionDTO],
+    responses={
+        404: {"model": ApiErrorEnvelope, "description": "Location not found"}
+    },
+    summary="Get condition for a specific campus facility",
+)
+async def get_location_condition(
+    location_id: str,
+    service: ConditionAggregationService = Depends(get_condition_service),
+):
+    """Retrieve detailed condition for a single campus room, lab, or facility."""
+    condition = await service.get_location_condition(location_id)
+    if not condition:
+        req_id = f"req_{uuid.uuid4().hex[:12]}"
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error": {
+                    "code": "LOCATION_NOT_FOUND",
+                    "message": f"Campus facility with ID '{location_id}' was not found.",
+                    "requestId": req_id,
+                    "details": {"locationId": location_id},
+                }
+            },
+        )
+
+    dto = LocationConditionDTO(
+        location=CampusLocationDTO(
+            id=condition.location.id,
+            name=condition.location.name,
+            type=condition.location.type,
+            campusId=condition.location.campus_id,
+            buildingId=condition.location.building_id,
+            capacity=condition.location.capacity,
+            metadata=condition.location.metadata,
+        ),
+        occupancy=OccupancySnapshotDTO(
+            locationId=condition.occupancy.location_id,
+            currentStudents=condition.occupancy.current_students,
+            capacity=condition.occupancy.capacity,
+            occupancyPercentage=condition.occupancy.occupancy_percentage,
+            status=condition.occupancy.status,
+            updatedAt=condition.occupancy.updated_at,
+            dataMode=condition.occupancy.data_mode,
+        ),
+        connectivity=ConnectivitySnapshotDTO(
+            locationId=condition.connectivity.location_id,
+            signalScore=condition.connectivity.signal_score,
+            quality=condition.connectivity.quality,
+            networkName=condition.connectivity.network_name,
+            dbm=condition.connectivity.dbm,
+            updatedAt=condition.connectivity.updated_at,
+            dataMode=condition.connectivity.data_mode,
+        ),
+        overallHealth=condition.overall_health,
+    )
+
+    return ApiResponseEnvelope(
+        data=dto,
+        meta=generate_meta(data_mode=condition.occupancy.data_mode.value),
+    )
+
+
+# ==============================================================================
+# 2. CAMPUS BOUNDARY ENDPOINTS
 # ==============================================================================
 
 @router.get(
@@ -118,7 +311,7 @@ async def get_campus(
 
 
 # ==============================================================================
-# 2. LOCATION ENDPOINTS
+# 3. LOCATION ENDPOINTS
 # ==============================================================================
 
 @router.get(
@@ -216,7 +409,7 @@ async def get_location(
 
 
 # ==============================================================================
-# 3. RESOURCE / INFRASTRUCTURE ENDPOINTS
+# 4. RESOURCE / INFRASTRUCTURE ENDPOINTS
 # ==============================================================================
 
 @router.get(
@@ -314,7 +507,7 @@ async def get_resource(
 
 
 # ==============================================================================
-# 4. SERVICE CATALOG ENDPOINTS
+# 5. SERVICE CATALOG ENDPOINTS
 # ==============================================================================
 
 @router.get(
@@ -412,7 +605,7 @@ async def get_service(
 
 
 # ==============================================================================
-# 5. DEPENDENCY ENDPOINTS
+# 6. DEPENDENCY ENDPOINTS
 # ==============================================================================
 
 @router.get(
@@ -537,7 +730,7 @@ async def delete_dependency(
 
 
 # ==============================================================================
-# 6. GRAPH & TRAVERSAL ENDPOINTS
+# 7. GRAPH & TRAVERSAL ENDPOINTS
 # ==============================================================================
 
 @router.get(
@@ -650,7 +843,7 @@ async def get_entity_dependents(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
-# Additional Top-level convenience route aliases matching prompt section 18
+# Convenience route aliases
 @router.get(
     "/api/dependencies/{entity_type}/{entity_id}/dependencies",
     response_model=DependencyTraversalResponseSchema,

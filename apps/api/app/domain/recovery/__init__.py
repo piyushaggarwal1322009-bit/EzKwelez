@@ -1,4 +1,73 @@
-"""Recovery Domain.
+"""Recovery Domain Module."""
 
-Owns recovery candidate generation, constraint validation, plan scoring, and optimization interfaces.
-"""
+from app.domain.recovery.models import (
+    AssumptionStatus,
+    ConfidenceLevel,
+    ConstraintSeverity,
+    ConstraintType,
+    EstimatedRecoveryTime,
+    Feasibility,
+    ImpactReduction,
+    PlanningAssumption,
+    PlanningObjective,
+    PlanningObjectivePriority,
+    PlanningObjectiveType,
+    PlanStatus,
+    RecoveryConstraint,
+    RecoveryOption,
+    RecoveryOptionType,
+    RecoveryPlan,
+    RecoveryPlanGeneratedEvent,
+    RecoveryPlanReviewedEvent,
+    RecoveryPrerequisite,
+    RecoveryRisk,
+    RecoveryTradeoff,
+    ResourceRequirement,
+    ResourceType,
+    TradeoffDirection,
+)
+from app.domain.recovery.ports import (
+    RecoveryCandidateGenerator,
+    RecoveryConstraintEvaluator,
+    RecoveryEventPublisher,
+    RecoveryPlanRepository,
+    RecoveryRankingService,
+)
+from app.domain.recovery.rules import (
+    DefaultRecoveryConstraintEvaluator,
+    DeterministicRecoveryRankingService,
+)
+
+__all__ = [
+    "AssumptionStatus",
+    "ConfidenceLevel",
+    "ConstraintSeverity",
+    "ConstraintType",
+    "DefaultRecoveryConstraintEvaluator",
+    "DeterministicRecoveryRankingService",
+    "EstimatedRecoveryTime",
+    "Feasibility",
+    "ImpactReduction",
+    "PlanningAssumption",
+    "PlanningObjective",
+    "PlanningObjectivePriority",
+    "PlanningObjectiveType",
+    "PlanStatus",
+    "RecoveryCandidateGenerator",
+    "RecoveryConstraint",
+    "RecoveryConstraintEvaluator",
+    "RecoveryEventPublisher",
+    "RecoveryOption",
+    "RecoveryOptionType",
+    "RecoveryPlan",
+    "RecoveryPlanGeneratedEvent",
+    "RecoveryPlanRepository",
+    "RecoveryPlanReviewedEvent",
+    "RecoveryPrerequisite",
+    "RecoveryRankingService",
+    "RecoveryRisk",
+    "RecoveryTradeoff",
+    "ResourceRequirement",
+    "ResourceType",
+    "TradeoffDirection",
+]

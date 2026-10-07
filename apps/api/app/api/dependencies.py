@@ -1,9 +1,36 @@
-"""API Dependencies and Security Context."""
+"""API Dependencies, Security Context, and Dependency Injection Providers."""
 
 from typing import Optional
 from fastapi import Depends, HTTPException, Header, status
+from app.application.condition_service import ConditionAggregationService
+from app.application.impact_service import (
+    BreadthFirstTraversalService,
+    DefaultImpactAnalysisService,
+)
+from app.application.incident_service import IncidentApplicationService
 from app.config import Settings, get_settings
+from app.domain.campus.ports import CampusRepository, ConnectivityProvider, OccupancyProvider
+from app.domain.graph.ports import CampusContextProvider, DependencyGraphRepository
+from app.domain.impact.ports import DependencyTraversalService, ImpactAnalysisEngine
+from app.domain.incidents.ports import IncidentEventPublisher, IncidentRepository
+from app.infrastructure.adapters.campus_context_adapter import CampusContextAdapter
+from app.infrastructure.adapters.in_memory_event_publisher import InMemoryIncidentEventPublisher
 from app.infrastructure.auth.jwt import AuthenticatedUser, verify_supabase_token
+from app.infrastructure.repositories.in_memory_campus_repository import InMemoryCampusRepository
+from app.infrastructure.repositories.in_memory_graph_repository import InMemoryDependencyGraphRepository
+from app.infrastructure.repositories.in_memory_incident_repository import InMemoryIncidentRepository
+from app.infrastructure.telemetry.mock_connectivity_provider import MockConnectivityProvider
+from app.infrastructure.telemetry.mock_occupancy_provider import MockOccupancyProvider
+
+# Singleton in-memory instances
+_campus_repo = InMemoryCampusRepository()
+_graph_repo = InMemoryDependencyGraphRepository()
+_incident_repo = InMemoryIncidentRepository()
+_incident_event_publisher = InMemoryIncidentEventPublisher()
+_mock_occupancy_provider = MockOccupancyProvider()
+_mock_connectivity_provider = MockConnectivityProvider()
+_traversal_service = BreadthFirstTraversalService()
+_campus_context_adapter = CampusContextAdapter(_campus_repo)
 
 
 def get_app_settings() -> Settings:
@@ -54,3 +81,82 @@ async def require_admin_or_staff(
             detail="Forbidden: Administrative or staff privileges are required to perform this action.",
         )
     return current_user
+
+
+def get_campus_repository() -> CampusRepository:
+    """Campus repository dependency."""
+    return _campus_repo
+
+
+def get_graph_repository() -> DependencyGraphRepository:
+    """Dependency graph repository dependency."""
+    return _graph_repo
+
+
+def get_incident_repository() -> IncidentRepository:
+    """Incident repository dependency."""
+    return _incident_repo
+
+
+def get_incident_event_publisher() -> IncidentEventPublisher:
+    """Incident event publisher dependency."""
+    return _incident_event_publisher
+
+
+def get_campus_context_provider(
+    campus_repo: CampusRepository = Depends(get_campus_repository),
+) -> CampusContextProvider:
+    """Campus context provider adapter dependency."""
+    return _campus_context_adapter
+
+
+def get_traversal_service() -> DependencyTraversalService:
+    """Graph traversal service dependency."""
+    return _traversal_service
+
+
+def get_occupancy_provider(settings: Settings = Depends(get_app_settings)) -> OccupancyProvider:
+    """Resolve occupancy provider based on configuration."""
+    return _mock_occupancy_provider
+
+
+def get_connectivity_provider(settings: Settings = Depends(get_app_settings)) -> ConnectivityProvider:
+    """Resolve connectivity provider based on configuration."""
+    return _mock_connectivity_provider
+
+
+def get_condition_service(
+    campus_repo: CampusRepository = Depends(get_campus_repository),
+    occupancy_provider: OccupancyProvider = Depends(get_occupancy_provider),
+    connectivity_provider: ConnectivityProvider = Depends(get_connectivity_provider),
+) -> ConditionAggregationService:
+    """Provide ConditionAggregationService instance."""
+    return ConditionAggregationService(
+        campus_repo=campus_repo,
+        occupancy_provider=occupancy_provider,
+        connectivity_provider=connectivity_provider,
+    )
+
+
+def get_impact_analysis_service(
+    graph_repo: DependencyGraphRepository = Depends(get_graph_repository),
+    traversal_service: DependencyTraversalService = Depends(get_traversal_service),
+    campus_context: CampusContextProvider = Depends(get_campus_context_provider),
+) -> ImpactAnalysisEngine:
+    """Provide ImpactAnalysisEngine instance."""
+    return DefaultImpactAnalysisService(
+        graph_repo=graph_repo,
+        traversal_service=traversal_service,
+        campus_context=campus_context,
+    )
+
+
+def get_incident_service(
+    incident_repo: IncidentRepository = Depends(get_incident_repository),
+    event_publisher: IncidentEventPublisher = Depends(get_incident_event_publisher),
+) -> IncidentApplicationService:
+    """Provide IncidentApplicationService instance."""
+    return IncidentApplicationService(
+        repository=incident_repo,
+        event_publisher=event_publisher,
+    )
