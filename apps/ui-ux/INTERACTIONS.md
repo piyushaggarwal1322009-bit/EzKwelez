@@ -125,9 +125,9 @@
 - **Analog + Numeric Synchronization:** Dragging the recovery duration slider (15m–240m) immediately updates the adjacent numeric text box (`<input type="number">`), and typing a numeric value smoothly repositions the slider thumb.
 - **Preset Buttons:** Quick buttons `[ Baseline (38m) ]`, `[ +30m (68m) ]`, `[ +60m (98m) ]`, and `[ Max Window (240m) ]` set target assumptions in one click.
 
-### 7.2 Debounced Recalculation & State Tickers
-- **Debounced Execution:** Slider adjustments update the client UI immediately, but backend physics recomputation debounces for 500ms after the last input.
-- **Pending Recalculation Badge:** While debouncing, the projected outcome panel displays an amber `[ Pending Recalculation ]` status badge to prevent operators from interpreting stale outputs as fresh data.
+### 7.2 Debounced Recalculation & State Feedback
+- **Debounce Contract:** Slider adjustments update client input immediately, but recalculation requests use a short client-side debounce before querying the engine; exact timing is implementation-defined.
+- **Calculating State Feedback:** While computing, the projected outcome panel displays calculating feedback. The UI does not assume a fixed calculation duration and supports fast, slow, and long-running computations.
 
 ### 7.3 Directional Delta Calculation & Non-Color Semantics
 - **Explicit Delta Tags:** Delta values always couple signed numerals with vector arrows:
@@ -138,26 +138,27 @@
 
 ### 7.4 Reset to Baseline & Safeguard
 - Clicking `[ Reset to Baseline ]` restores all assumptions to current active recovery parameters.
-- If more than 3 assumptions were modified, a lightweight confirmation toast confirms: *"Reset all scenario assumptions to active baseline?"*.
+- If multiple assumptions were modified, a lightweight confirmation toast confirms: *"Reset all scenario assumptions to active baseline?"*.
 
 ### 7.5 Advisory Simulation Safety & Recovery Branching
 - **Advisory Isolation:** Persistent sky-blue top banner clearly states: *"SIMULATION SANDBOX · No live campus mutations are made."*
-- **Branching Action:** Clicking `[ Branch Recovery Plan with Scenario Assumptions → ]` routes to `/recovery` with pre-loaded assumptions and launches the **Guarded Two-Step Approval Flow** to ensure consequential interventions are verified before live broadcast.
+- **Branching Action:** Clicking `[ Branch Recovery Plan with Scenario Assumptions → ]` routes to `/recovery` with pre-loaded assumptions and initiates the **Guarded Approval Flow** to ensure consequential interventions are authorized prior to live execution.
 
 ---
 
 ## 8. Confirmation & High-Impact Guardrails
 
-### 8.1 Two-Step Confirmation for High-Impact Recovery Execution
-Executing a recovery plan or shutting down a building affects hundreds of students and faculty. The system requires structured safeguards:
+### 8.1 Explicit Approval for High-Impact Recovery Execution
+Executing an operational recovery plan affects campus facilities, services, and student cohorts. The system enforces structured safeguards:
 1. **Trigger:** Operator clicks `[ Review & Approve Plan A ]`.
 2. **Modal Presentation:** Displays a dedicated `<GuardedApprovalModal>` outlining:
-   - Facilities reconnected and specific classrooms unlocked.
-   - Exact classes rerouted and total students affected (e.g. 84 residual students).
-   - Maintenance crew dispatch assignment (Crew Team Alpha -> Substation C).
-   - Automated student broadcast preview drafted for the 438 enrolled cohort members.
-3. **Explicit Verification:** Requires checking: `[x] I confirm this recovery intervention will be applied to live campus operations`.
-4. **Action:** `[ Confirm & Execute Recovery Plan ]` button activates only after verification is checked.
+   - What will happen upon execution.
+   - Specific facilities, classrooms, or services affected.
+   - Whether the operational intervention is reversible.
+   - Specific plan or data dataset being executed.
+   - Final operational consequence.
+3. **Explicit Review & Acknowledgement:** Operator acknowledges reviewed operational deltas and potential disruption risks.
+4. **Explicit Approval Action:** Authorization occurs strictly upon clicking the final action button, explicitly labeled **`[ Approve & Execute Recovery ]`** (or context-specific equivalent). A checkbox alone does not constitute authorization.
 5. **Focus Safety:** Default keyboard focus is placed on the `[ Cancel ]` button to prevent accidental execution via rapid `Enter` key presses.
 
 ### 8.2 Destructive Action Safeguards
@@ -175,10 +176,10 @@ EzyKwelez enforces a **Zero Dead-End Guarantee**:
 | **Loading State** | Dimension-matched `<SkeletonLoader />` in content grid | Navigation remains interactive; allows switching views or canceling request. |
 | **Zero Active Incidents** | Green all-clear illustration: *"All 18 buildings operational. Zero active disruptions."* | Actions: `[ Create Incident ]` or `[ Run What-If Drill ]`. |
 | **Empty Search / Filter** | Neutral filter graphic: *"No incidents match filter: Severity = Critical in Humanities."* | Action: `[ Reset All Filters ]` immediately restores default list. |
-| **Stale Telemetry Sync** | Amber banner: *"⚠️ Telemetry sync paused (network idle 60s)."* | Action: `[ Refresh Sync ]` button immediately forces background revalidation. |
+| **Stale Telemetry Sync** | Amber banner: *"⚠️ Telemetry sync paused."* | Action: `[ Refresh Sync ]` button immediately forces background revalidation. |
 | **Telemetry Outage / Error** | Red alert banner: *"Unable to load live campus graph."* | Action: `[ Retry Connection ]` button with exponential backoff indicator. |
 | **No Feasible Recovery Plans** | Warning panel: *"Zero rooms satisfy specialized lab equipment constraint."* | Action: `[ Relax Constraints ]` or `[ Open What-If Simulation ]`. |
-| **Incident Resolved** | Green badge: *"Incident resolved 12m ago. Recovery plan executed."* | Actions: `[ View Audit Trail ]` or `[ Return to Command Center ]`. |
+| **Incident Resolved** | Green badge: *"Incident resolved. Recovery plan executed."* | Actions: `[ View Audit Trail ]` or `[ Return to Command Center ]`. |
 
 ---
 
@@ -186,15 +187,85 @@ EzyKwelez enforces a **Zero Dead-End Guarantee**:
 
 ### 10.1 Location Health Selection & Dual-View Inspection
 - **Schematic-to-Table Dual-View Toggle:** Operators can switch between the visual 18-building operational schematic and an accessible `<DataTable>` with a single click. The active selection persists across view switches.
-- **Location Detail Drawer:** Clicking any building card or table row triggers a 400px Level 4 slide-over drawer showing dual-metric breakdowns (Occupancy + Connectivity) and a 60-minute environmental delta timeline.
+- **Location Detail Drawer:** Clicking any building card or table row triggers a slide-over drawer using approved drawer sizing tokens, showing dual-metric breakdowns (Occupancy + Connectivity) and a 60-minute environmental delta timeline.
 
 ### 10.2 Continuous Telemetry Sync & Stale Revalidation
-- **Polling Cadence:** Telemetry polls every 15s in active viewports. When the tab is backgrounded, polling drops to 60s.
-- **Stale State Recovery:** If sync exceeds 5m, the freshness badge turns amber (`STALE · 18m ago`). Clicking the badge initiates an instant background revalidation without clearing existing UI data.
+- **Polling Cadence:** Telemetry polls continuously in active viewports and drops to reduced frequency when backgrounded.
+- **Stale State Recovery:** When telemetry exceeds the fresh window, the freshness badge turns amber (`STALE`). Clicking the badge initiates background revalidation without clearing existing UI data.
 
 ### 10.3 Telemetry-to-Incident Escalation Boundary
 - **Separation Principle:** Observed anomalies (e.g. Substation A voltage drop) display as *"Potential Operational Concern"*, not an automatic incident.
-- **Escalation Interaction:** Clicking `[ Escalate to Incident Queue → ]` in the Location Detail panel opens the Incident Creation modal with pre-populated building ID, current occupancy (438), and affected utility node.
+- **Escalation Interaction:** Clicking `[ Escalate to Incident Queue → ]` in the Location Detail panel opens the Incident Creation modal with pre-populated building ID, current occupancy, and affected utility node.
 
 ### 10.4 Relocation & Absorption Space Finder
 - In the Occupancy view, clicking `[ Find Available Alternative Rooms ]` filters rooms with utilization `<60%`, compatible equipment tags, and sorts them by shortest walking distance from the source building.
+
+---
+
+## 11. Multi-Dimensional Interaction State Model & Precedence
+
+All interactions in EzyKwelez map directly to the **5 Orthogonal State Dimensions** defined in [`apps/ui-ux/INTERACTION-STATE-SYSTEM.md`](./INTERACTION-STATE-SYSTEM.md):
+1. **Interaction State:** Default, Hover, Focus-visible, Active/Pressed, Selected, Disabled.
+2. **Data State:** Fresh/Current, Stale, Partial, Unknown, Unavailable.
+3. **Async State:** Idle, Loading, Calculating, Success, Error.
+4. **Permission/Action State:** Editable, Read-only, Guarded.
+5. **Content State:** Populated, Empty.
+
+### Dimensional Precedence Rules:
+- **Async Error** supersedes **Async Loading**.
+- **Unavailable Data** supersedes normal fresh presentations.
+- **Disabled** supersedes standard hover/active behaviors.
+- **Stale Data** remains visibly stale while background recalculation occurs.
+- A **Selected** component can simultaneously be **Stale** and **Calculating**.
+- A **Read-Only** component remains focusable for inspection.
+
+---
+
+## 12. Asynchronous Calculation & Simulation Recalculation Flow
+
+To prevent UI lockup and layout jitter during analytical processing:
+
+```text
+SIMULATION RECALCULATION CYCLE:
+[ 1. Modified Input ]  ──(Short Debounce)──►  [ 2. Pending Recalculation Badge ]
+                                                      │
+[ 4. Projected Output ] ◄──(Update Scorecard)── [ 3. Calculating Feedback ]
+         │
+    (Engine Error) ──►  [ 5. Calculation Failed (Actionable Retry CTA) ]
+```
+
+- **Non-Blocking Rule:** Operators can continue adjusting adjacent controls while background calculation is in-flight.
+- **Calculation Duration:** The UI does not assume a fixed calculation duration and gracefully supports fast, slow, and long-running operations.
+- **Failed Calculation Rule:** A failed calculation is never displayed as a valid projection or zero delta.
+
+---
+
+## 13. Guarded Action Protocol & Simulation Isolation
+
+High-consequence operational mutations enforce the **5-Step Guarded Protocol**:
+
+$$\text{Review Plan} \longrightarrow \text{Understand Consequences} \longrightarrow \text{Explicit Approval} \longrightarrow \text{Execute Operational Action} \longrightarrow \text{Result \& Audit}$$
+
+- **Simulation Isolation:** The What-If Simulation Sandbox (`/simulation`) is strictly non-destructive and cannot directly execute live operations. It branches into recovery review first:
+  $$\text{Simulation} \longrightarrow \text{Branch Draft Plan} \longrightarrow \text{Recovery Review} \longrightarrow \text{Guarded Approval} \longrightarrow \text{Execute Operational Action} \longrightarrow \text{Result \& Audit}$$
+
+---
+
+## 14. Action Priority & Dominant CTA Hierarchy
+
+Every decision surface enforces a strict action priority to eliminate operator hesitation:
+- **Primary CTA (1 Max per view):** Solid brand primary (`--color-brand-primary`). Dominant next step.
+- **Secondary CTA:** Elevated bordered surface (`--color-bg-elevated`). Exploration/Comparison.
+- **Tertiary CTA:** Ghost or icon trigger (`--color-text-secondary`). Filtering, export, inspection.
+- **Destructive / Guarded CTA:** Solid danger red (`--color-status-danger`) coupled with mandatory `<GuardedApprovalModal>`.
+
+---
+
+## 15. AI Containment & Advisory Boundary
+
+- **Advisory Role:** Strictly advisory summarization and contextualization grounded in authoritative system results and available operational context. AI translates calculated optimization trade-offs into plain-text explanations and drafts communications for operator review.
+- **Zero Authority Guardrail:** AI is strictly barred from autonomous state mutations, plan approvals, constraint overrides, or live database writes. AI has **zero state-mutation, authorization, or decision-making authority**.
+- **Grounding Requirement:** AI insights are rendered in dedicated `<AIAssistantContainer />` panels and remain strictly grounded in authoritative system results and available operational context.
+
+
+

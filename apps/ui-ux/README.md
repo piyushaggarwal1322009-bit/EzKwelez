@@ -55,16 +55,22 @@ EzyKwelez is an operational campus intelligence product. Its mission is to trans
 
 | Document | Purpose | Primary Audience |
 | :--- | :--- | :--- |
+| [`IMPLEMENTATION-CONTRACT.md`](./IMPLEMENTATION-CONTRACT.md) | **Canonical Phase 9 implementation contract**, architectural boundaries, screen/component specs, and PR acceptance criteria. | Frontend & Backend Engineers, QA |
 | [`INFORMATION-ARCHITECTURE.md`](./INFORMATION-ARCHITECTURE.md) | Canonical product mental model, 6 top-level areas, 4-level information hierarchy, user journeys, screen relationship map, and context preservation rules. | Product, Frontend, Designers, QA |
 | [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) | Canonical design tokens, visual language, typography, color semantics, and atomic styling rules. | Frontend Engineers, Designers |
 | [`COMPONENTS.md`](./COMPONENTS.md) | Component inventory with anatomy, variants, states, interactions, accessibility, and usage rules. | Frontend Engineers |
 | [`SCREENS.md`](./SCREENS.md) | Comprehensive 6-area screen inventory, user goals, key information hierarchy, and primary actions. | Product, Frontend, QA |
-| [`screens/command-center.md`](./screens/command-center.md) | Flagship Command Center operational specification, component layout, and state matrices. | Frontend Engineers, QA |
+| [`screens/`](./screens/) | Modular screen specifications (`command-center.md`, `live-campus.md`, `incidents.md`, `recovery.md`, `simulation.md`). | Frontend Engineers, QA |
 | [`INTERACTIONS.md`](./INTERACTIONS.md) | Interaction principles for navigation, filtering, graph exploration, simulation, destructive actions, and feedback. | Frontend Engineers, QA |
+| [`INTERACTION-STATE-SYSTEM.md`](./INTERACTION-STATE-SYSTEM.md) | Canonical 5-dimensional state machine, precedence model, and asynchronous calculation flows. | Frontend Engineers, QA |
 | [`RESPONSIVE.md`](./RESPONSIVE.md) | Breakpoint strategies, layout adaptations, responsive tables, side panels, and mobile vs. desktop workflows. | Frontend Engineers |
 | [`ACCESSIBILITY.md`](./ACCESSIBILITY.md) | Production-grade accessibility standards: keyboard navigation, screen reader semantics, contrast, and reduced motion. | Frontend Engineers, QA |
+| [`RESPONSIVE-ACCESSIBILITY-AUDIT.md`](./RESPONSIVE-ACCESSIBILITY-AUDIT.md) | Comprehensive Phase 8 accessibility and responsive verification audit against WCAG 2.1 AA. | Frontend Engineers, QA |
 | [`DEVELOPER-HANDOFF.md`](./DEVELOPER-HANDOFF.md) | Guide for translating UI/UX specifications into Next.js/Tailwind code, design review checklist, and token mapping. | Frontend Engineers |
+| [`FINAL-AUDIT.md`](./FINAL-AUDIT.md) | **Phase 10 Final UI/UX Audit & Release Gate**, verification findings register, and implementation readiness verdict. | Frontend & Backend Engineers, Leadership |
 | [`assets/`](./assets/) | Centralized SVG assets, campus schematics, branding, and diagram graphics. | Designers, Developers |
+
+
 
 ---
 

@@ -224,3 +224,13 @@
   - **Level 4 (Inspection Detail):** Granular chronological audit trail with operator identity and timestamp stamps.
 - **Important Components:** `<DataTable>`, `<FormInput>`, `<ToggleSwitch>`, `<AuditTrailViewer>`.
 - **Responsive Behavior:** Left vertical tab rail on desktop; dropdown section switcher on mobile.
+
+---
+
+## 7. Cross-Product Responsive & Accessibility Governance
+
+All screens defined in this specification adhere strictly to:
+1. **Responsive & Accessibility Specification:** [`apps/ui-ux/RESPONSIVE-ACCESSIBILITY-AUDIT.md`](./RESPONSIVE-ACCESSIBILITY-AUDIT.md) — WCAG 2.1 AA baseline, 4-tier breakpoint contract, mandatory dual-view rule, touch targets $\ge 44 \times 44\text{px}$, and zoom resilience up to 200%.
+2. **Interaction & State System:** [`apps/ui-ux/INTERACTION-STATE-SYSTEM.md`](./INTERACTION-STATE-SYSTEM.md) — 5 orthogonal state dimensions, dimensional precedence, and explicit guarded approval.
+3. **Developer Handoff Contract:** [`apps/ui-ux/DEVELOPER-HANDOFF.md`](./DEVELOPER-HANDOFF.md) — PR quality gate and TypeScript interaction types.
+

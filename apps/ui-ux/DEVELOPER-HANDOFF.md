@@ -526,12 +526,106 @@ Every frontend Pull Request must pass the design review checklist before merging
 
 ### PR Checklist
 - [ ] **IA Compliance:** Routes and navigation match `INFORMATION-ARCHITECTURE.md` hierarchy.
-- [ ] **Screen Fidelity:** Layout blocks and 4-level information hierarchy match `screens/command-center.md`.
+- [ ] **Screen Fidelity:** Layout blocks and 4-level information hierarchy match `screens/` specifications.
 - [ ] **Zero Magic CSS:** No arbitrary colors (e.g. `bg-[#0a0f1d]`); all styles map to semantic tokens.
 - [ ] **Tabular Metrics:** All metric numbers, capacity values, and coordinates use `font-mono tabular-nums`.
-- [ ] **WCAG 2.1 AA Baseline:** Passes automated axe-core audit with zero errors.
-- [ ] **Keyboard Navigable:** Entire screen flow is completable without mouse interaction.
-- [ ] **Visible Focus:** Focus rings are clearly visible on dark surfaces.
-- [ ] **Dual-View Rule:** All spatial maps and graphs offer accessible data table alternatives.
-- [ ] **Reduced Motion:** Verified under `prefers-reduced-motion: reduce`.
+- [ ] **WCAG 2.1 AA Baseline:** Verified against the documented WCAG 2.1 AA design requirements (requires zero axe-core audit errors prior to release).
+- [ ] **Keyboard Navigable:** The documented interaction contracts define the full decision flow as keyboard-operable.
+- [ ] **Visible Focus:** Focus rings are clearly visible on dark surfaces (2px `#38bdf8` with 2px offset).
+- [ ] **Dual-View Rule:** All spatial maps, DAGs, and comparison radars offer accessible data table/tree alternatives.
+- [ ] **Reduced Motion:** Verified against the documented `prefers-reduced-motion: reduce` design requirements.
+- [ ] **Touch Targets:** All interactive touch targets measure $\ge 44 \times 44\text{px}$ with $\ge 8\text{px}$ separation.
+- [ ] **Zoom Resilience:** Layout remains functional and readable up to 200% browser/text zoom.
+- [ ] **Phase 7 State Dimensions:** Implements applicable states across the 5 orthogonal dimensions in `INTERACTION-STATE-SYSTEM.md`.
+- [ ] **Dimensional Precedence:** Respects precedence within and across dimensions (Async Error > Loading; Stale visible during Calculating).
+- [ ] **Explicit Guarded Approval:** Consequential actions enforce explicit approval (`[ Approve & Execute Recovery ]`); default focus on `[ Cancel ]`. Checkbox is acknowledgement only.
+- [ ] **Simulation Sandbox Isolated:** Simulation routes cannot directly execute live campus state mutations.
+- [ ] **Calculation UX:** Implements short client-side debounce and non-blocking calculating feedback for variable engine processing durations.
+- [ ] **Phase 8 Audit Compliance:** Verified against the documented [`RESPONSIVE-ACCESSIBILITY-AUDIT.md`](./RESPONSIVE-ACCESSIBILITY-AUDIT.md) requirements.
+
+---
+
+## 8. Phase 7 Frontend Interaction Contracts & TypeScript Interfaces
+
+Frontend engineers in `apps/web/` must adhere to the multi-dimensional state specifications defined in [`apps/ui-ux/INTERACTION-STATE-SYSTEM.md`](./INTERACTION-STATE-SYSTEM.md).
+
+```typescript
+// apps/web/src/types/interaction-states.ts
+
+// 1. Interaction State Dimension
+export type InteractionState =
+  | 'default'
+  | 'hover'
+  | 'focus-visible'
+  | 'active'
+  | 'selected'
+  | 'disabled';
+
+// 2. Data State Dimension
+export type DataState =
+  | 'current'
+  | 'stale'
+  | 'partial'
+  | 'unknown'
+  | 'unavailable';
+
+// 3. Async State Dimension
+export type AsyncState =
+  | 'idle'
+  | 'loading'
+  | 'calculating'
+  | 'success'
+  | 'error';
+
+// 4. Permission / Action State Dimension
+export type PermissionState =
+  | 'editable'
+  | 'read-only'
+  | 'guarded';
+
+// 5. Content State Dimension
+export type ContentState =
+  | 'populated'
+  | 'empty';
+
+// Data Provenance Tags
+export type DataProvenance =
+  | 'OBSERVED'   // Real-time sensor feed
+  | 'CALCULATED' // Engine-derived metric
+  | 'PROJECTED'  // Simulation scenario outcome
+  | 'ASSUMED'    // Operator-adjusted parameter
+  | 'MANUAL';    // Human verified record
+
+export interface GuardedApprovalPayload {
+  incidentId: string;
+  planId: string;
+  affectedHeadcount: number;
+  unlockedRooms: string[];
+  assignedResources: string[];
+  operationalConsequence: string;
+  isReversible: boolean;
+  acknowledgedByOperator: boolean;
+  approvedByOperator: boolean;
+  timestamp: string;
+}
+```
+
+---
+
+## 9. Phase 8 Responsive & Accessibility Implementation Contracts
+
+Frontend developers must adhere to the formal accessibility and responsive requirements defined in [`apps/ui-ux/RESPONSIVE-ACCESSIBILITY-AUDIT.md`](./RESPONSIVE-ACCESSIBILITY-AUDIT.md):
+
+1. **Formal Baseline Target:** WCAG 2.1 Level AA.
+2. **Canonical Breakpoints:** Consume standard Tailwind tokens (`sm: <768px`, `md: 768-1023px`, `lg: 1024-1279px`, `xl: >=1280px`).
+3. **Mandatory Dual-View Implementation:**
+   - Interactive maps MUST provide an accompanying `<DataTable>` alternative.
+   - Blast Radius DAG canvases MUST provide an expandable hierarchical tree (`<ol role="tree">`).
+   - Comparison radar charts MUST provide semantic HTML `<table>` elements with `<th scope="col">` and `<th scope="row">`.
+4. **Touch Target Sizing:** Every interactive element on touch viewports must contain at least `44x44px` bounding hit area.
+5. **Screen Reader Landmarks:** Every view must contain `<header role="banner">`, `<nav>`, `<main id="main-content">`, and `<aside>`.
+6. **No Color-Only State:** All status indicators must pair icons, text labels, and semantic color tokens.
+
+
+
 

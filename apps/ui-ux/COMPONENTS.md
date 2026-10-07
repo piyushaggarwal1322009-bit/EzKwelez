@@ -298,3 +298,74 @@
   - Side-by-Side Comparison Diff Matrix.
 - **Visual Pattern:**
   - Sky-blue accented simulation sandbox with instant debounced recalculation feedback and "Apply to Incident" workflow.
+
+---
+
+## 3. Phase 7 Feedback & Guarded Overlay Component Patterns
+
+---
+
+### 3.1 Guarded Approval Modal (`<GuardedApprovalModal />`)
+- **Purpose:** Enforces the mandatory 5-step safety protocol before executing high-impact recovery plans, facility closures, or operational interventions.
+- **Anatomy:**
+  ```text
+  [ Modal Header: Severity Icon + Consequential Title ]
+  [ Impact Summary: Displaced headcount, affected facilities, dispatched resources ]
+  [ Blast Radius Delta Strip: Baseline vs. Post-Intervention ]
+  [ Consequence Acknowledgement: Checkbox confirming reviewed operational impacts ]
+  [ Footer Actions: [ Cancel (Default Focus) ] | [ Approve & Execute Recovery ] ]
+  ```
+- **Authorization Contract:** A consequence acknowledgement checkbox within the modal confirms review of the impact details, but **does not constitute authorization**. Authorization occurs solely upon deliberate activation of the primary action button, explicitly labeled **`[ Approve & Execute Recovery ]`** (or domain equivalent).
+- **States:**
+  - `unreviewed`: Confirm button inert (`aria-disabled="true"`). Default focus on `[ Cancel ]`.
+  - `reviewed`: Consequence acknowledgement confirmed; primary button activates with solid brand color.
+  - `executing`: Primary button transitions to loading feedback (`aria-busy="true"`).
+  - `error`: Inline alert surfaces execution failure while preserving operator context.
+- **Accessibility:** Focus-trapped, `role="alertdialog"`, `aria-describedby="consequence-summary"`, `Escape` dismisses.
+
+---
+
+### 3.2 Stale Telemetry Banner (`<StaleTelemetryBanner />`)
+- **Purpose:** Informs the operator when displayed telemetry is cached/outdated without destroying access to usable data.
+- **Anatomy:** `[ Clock Icon (Amber) | Message: "Telemetry stale" | CTA: [ Re-sync Now ] ]`
+- **Variants:** `inline` (inside card header) and `global` (full-width banner beneath Command Bar).
+- **Accessibility:** `role="status"`, `aria-live="polite"`.
+
+---
+
+### 3.3 Empty State Container (`<EmptyState />`)
+- **Purpose:** Guarantees zero dead-ends when queries, filters, or active incidents return zero rows.
+- **Anatomy:** `[ Neutral Graphic / Icon | Primary Heading | Guidance Description | Action Recovery CTA ]`
+- **Examples:**
+  - All-Clear: `<CheckCircle2>` *"All 18 buildings operational. Zero active disruptions."* -> `[ Run What-If Drill ]`.
+  - Filter Reset: `<Filter>` *"No incidents match filter: Severity = Critical in Humanities"* -> `[ Reset All Filters ]`.
+
+---
+
+### 3.4 Contextual Inspection Drawer (`<DrawerInspector />`)
+- **Purpose:** Slide-over detail inspection for incident root cause, node DAG properties, and AI "Why this plan?" rationales.
+- **Anatomy:** `[ Pinned Header: Title + Subtitle + Close '✕' ]` -> `[ Scrollable Body: Metrics, Telemetry, AI Rationale ]` -> `[ Pinned Footer: Primary Secondary Actions ]`
+- **Behavior:**
+  - Desktop: Uses the approved drawer sizing token and preserves the existing responsive layout contract.
+  - Tablet/Mobile: Converts to bottom-sheet modal.
+  - Dismissal: `Escape`, close button, or backdrop tap. Restores focus to triggering element.
+
+---
+
+## 4. Component State Applicability Matrix (By Dimension)
+
+Components implement the subset of states applicable to their functional role across the 5 orthogonal dimensions:
+
+| Component | Interaction States | Data States | Async States | Permission States | Content States |
+|---|---|---|---|---|---|
+| `<Button />` | Default, Hover, Focus, Active, Disabled | Current | Idle, Loading, Success | Editable | Populated |
+| `<Input />` | Default, Hover, Focus, Active, Disabled | Current | Idle, Error | Editable, Read-only | Populated, Empty |
+| `<Tabs />` | Default, Hover, Focus, Active, Selected, Disabled | Current | Idle | Editable | Populated |
+| `<IncidentCard />` | Default, Hover, Focus, Active, Selected | Current, Stale | Idle, Loading, Error, Success | Editable, Guarded | Populated |
+| `<OccupancyPattern />` | Default, Hover, Focus, Selected | Current, Stale, Partial, Unavailable | Idle, Loading, Error | Read-only | Populated, Empty |
+| `<ConnectivityPattern />`| Default, Hover, Focus, Selected | Current, Stale, Partial, Unavailable | Idle, Loading, Error | Read-only | Populated, Empty |
+| `<RecoveryPattern />` | Default, Hover, Focus, Active, Selected, Disabled | Current, Stale, Partial | Idle, Loading, Calculating, Success, Error | Guarded | Populated, Empty |
+| `<SimulationPattern />` | Default, Hover, Focus, Active, Disabled | Current, Stale, Partial | Idle, Loading, Calculating, Success, Error | Editable | Populated |
+| `<GuardedApprovalModal />`| Default, Focus, Active, Disabled | Current | Idle, Loading, Error, Success | Guarded | Populated |
+
+

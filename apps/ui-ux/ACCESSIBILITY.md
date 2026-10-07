@@ -144,9 +144,32 @@ To support operators with vestibular or seizure sensitivities:
 ## 9. Accessibility Verification Checklist
 
 Before any component or template PR is approved:
-- [ ] **Automated Audit:** axe-core / Lighthouse Accessibility audit returns zero violations.
-- [ ] **Keyboard Complete:** Full operational decision flow (Incident -> Blast Radius -> Recovery -> Approval) is completable without mouse input.
-- [ ] **Focus Rings:** Focus indicators are visible and high-contrast against all background surfaces.
-- [ ] **Screen Reader Test:** Tested with NVDA / VoiceOver; all buttons, metrics, and live updates announce descriptive labels.
+- [ ] **Automated Audit:** Requires automated axe-core / Lighthouse audit with zero violations prior to deployment.
+- [ ] **WCAG Baseline:** Verified against the documented WCAG 2.1 Level AA design requirements.
+- [ ] **Keyboard Complete:** The documented interaction contracts define the full operational decision flow (Incident -> Blast Radius -> Recovery -> Approval) as keyboard-operable.
+- [ ] **Focus Rings:** Focus indicators are visible and high-contrast (2px `#38bdf8` ring with 2px offset) against all background surfaces.
+- [ ] **Screen Reader Verification:** All buttons, metrics, and live updates specify descriptive screen-reader labels and landmarks.
 - [ ] **Dual-View Check:** Accessible data tables exist for all maps and graphs.
-- [ ] **Reduced Motion:** Verified with reduced motion enabled; all motion stops immediately.
+- [ ] **Reduced Motion:** Verified against the documented `prefers-reduced-motion` design requirements.
+- [ ] **Zoom Resilience:** Interface remains functional and readable up to 200% text/browser zoom.
+- [ ] **Audit Compliance:** Verified against the documented [`RESPONSIVE-ACCESSIBILITY-AUDIT.md`](./RESPONSIVE-ACCESSIBILITY-AUDIT.md) requirements.
+
+---
+
+## 10. Phase 8 Finalized Accessibility & Screen Reader Contracts
+
+1. **Screen Reader Politeness Calibration:**
+   - Real-time continuous sensor pings and canvas animation pulses are marked `aria-hidden="true"` to prevent audio flooding.
+   - Significant discrete state transitions (Recalculation complete, Stale warning detected, Filter applied) use `aria-live="polite" role="status"`.
+   - Emergency campus broadcasts use `aria-live="assertive" role="alert"`.
+2. **Guarded Modal Focus Safety:**
+   - In `<GuardedApprovalModal>`, initial focus is strictly bound to the **`[ Cancel ]`** button to prevent accidental keyboard execution via rapid `Enter` key presses.
+   - The primary execute button (`[ Approve & Execute Recovery ]`) activates upon consequence acknowledgement.
+3. **Data Provenance Screen Reader Labeling:**
+   - Values derived from simulation or stale sources include explicit descriptive screen-reader labels (e.g. `<span className="sr-only">Projected simulation value: 176 students</span>`).
+4. **Zero Reliance on Hover:**
+   - All critical metric disclosures and "Why this plan?" explanations are accessible via direct keyboard activation (`Enter`/`Space`) and tap gestures.
+5. **Semantic Landmark & Heading Hierarchy:**
+   - Enforces valid landmarks (`header`, `nav`, `main`, `aside`) and strict `<h1>` -> `<h2>` -> `<h3>` semantic tree nesting.
+
+

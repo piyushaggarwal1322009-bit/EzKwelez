@@ -108,3 +108,23 @@ DESKTOP (>= 1280px)        LAPTOP (1024-1279px)       TABLET (768-1023px)       
 - [ ] Standard laptop (`1366x768`): Icon rail preserves workspace; no vertical clipping of modals.
 - [ ] Tablet (`768x1024`): Touch targets >= 44px; side drawer transitions to overlay.
 - [ ] Mobile (`375x667` to `414x896`): Bottom navigation bar sticky; zero horizontal window scroll overflow; tables render as card stacks.
+- [ ] Information Priority: Mobile prioritizes `Operational Status > Critical Alert > Primary Metric > Primary Action`.
+- [ ] Audit Compliance: Verified against the documented [`RESPONSIVE-ACCESSIBILITY-AUDIT.md`](./RESPONSIVE-ACCESSIBILITY-AUDIT.md) requirements.
+
+---
+
+## 6. Phase 8 Responsive & Touch Interaction Standards
+
+1. **Touch Target Dimensions:**
+   - All buttons, icon triggers, tabs, table row actions, and accordion headers must have hit areas of $\ge 44 \times 44\text{ px}$ on touch viewports (`md` and `sm`).
+   - Adjacent touch controls must maintain a minimum `8px` separation gap to prevent accidental neighboring taps.
+2. **Bottom Sheet Adaptation:**
+   - Desktop side drawers smoothly transition to full-width **Bottom Sheets** on viewports $<768\text{px}$.
+   - Bottom sheets support drag-to-dismiss via top grab handle and a persistent accessible `[ Close ✕ ]` button.
+3. **Simulation Touch Slider Ergonomics:**
+   - On touch devices, sliders feature an enlarged thumb with an invisible $\ge 44\text{px}$ touch hit target radius.
+   - Sliders remain paired with companion `<input type="number">` fields for precise direct entry without fine motor scrubbing.
+4. **Zero Gesture-Only Critical Interventions:**
+   - No high-consequence action (approval, rejection, escalation) may rely solely on swipe or pinch gestures. Every gesture has a visible, high-contrast button alternative.
+
+
