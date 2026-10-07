@@ -1,6 +1,7 @@
 """API Dependencies and Dependency Injection Providers."""
 
-from fastapi import Depends
+from typing import Optional
+from fastapi import Depends, Header, HTTPException, status
 from app.application.condition_service import ConditionAggregationService
 from app.application.impact_service import (
     BreadthFirstTraversalService,
@@ -14,6 +15,7 @@ from app.domain.impact.ports import DependencyTraversalService, ImpactAnalysisEn
 from app.domain.incidents.ports import IncidentEventPublisher, IncidentRepository
 from app.infrastructure.adapters.campus_context_adapter import CampusContextAdapter
 from app.infrastructure.adapters.in_memory_event_publisher import InMemoryIncidentEventPublisher
+from app.infrastructure.auth.jwt import AuthenticatedUser, verify_supabase_token
 from app.infrastructure.repositories.in_memory_campus_repository import InMemoryCampusRepository
 from app.infrastructure.repositories.in_memory_graph_repository import InMemoryDependencyGraphRepository
 from app.infrastructure.repositories.in_memory_incident_repository import InMemoryIncidentRepository
@@ -113,3 +115,24 @@ def get_incident_service(
         repository=incident_repo,
         event_publisher=event_publisher,
     )
+
+
+def get_current_user(
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+) -> AuthenticatedUser:
+    """Validate Bearer token and return current authenticated user."""
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        return verify_supabase_token(authorization)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+

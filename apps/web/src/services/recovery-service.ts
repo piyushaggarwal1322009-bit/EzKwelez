@@ -10,7 +10,7 @@ import {
   RecoveryPlanningRequest,
   TradeoffDirection,
   Criticality,
-  ResourceType,
+  RecoveryResourceType,
   PlanningObjectiveType,
   PlanningObjectivePriority,
   AssumptionStatus,
@@ -105,7 +105,7 @@ const MOCK_RECOVERY_PLANS: Record<string, RecoveryPlan> = {
         ],
         resourceRequirements: [
           {
-            resourceType: ResourceType.STAFF,
+            resourceType: RecoveryResourceType.STAFF,
             quantity: 1,
             availability: "available",
             location: "Block C Admin",
@@ -168,7 +168,7 @@ const MOCK_RECOVERY_PLANS: Record<string, RecoveryPlan> = {
         ],
         resourceRequirements: [
           {
-            resourceType: ResourceType.TECHNICIAN,
+            resourceType: RecoveryResourceType.TECHNICIAN,
             quantity: 2,
             availability: "dispatched",
             location: "Substation Grid A",

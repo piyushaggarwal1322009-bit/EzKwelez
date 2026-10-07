@@ -163,8 +163,8 @@ EzyKwelez/
 ### 1. Clone & Setup Environment
 
 ```bash
-git clone https://github.com/piyushaggarwal1322009-bit/EzyKwelez.git
-cd EzyKwelez
+git clone https://github.com/piyushaggarwal1322009-bit/EzKwelez.git
+cd EzKwelez
 cp .env.example .env
 ```
 
@@ -178,7 +178,7 @@ npm run build:shared
 ### 3. Install Python Dependencies
 
 ```bash
-pip install -r apps/api/requirements.txt
+pip install -r apps/api/requirements.txt -r apps/api/requirements-dev.txt
 ```
 
 ---
@@ -203,7 +203,7 @@ Or via script:
 ```powershell
 .\scripts\run-api.ps1
 ```
-The API will be available at [http://localhost:8000](http://localhost:8000) (Docs at [http://localhost:8000/docs](http://localhost:8000/docs)).
+The API will be available at [http://localhost:8000](http://localhost:8000) (Docs at [http://localhost:8000/docs](http://localhost:8000/docs) and [http://localhost:8000/api/docs](http://localhost:8000/api/docs)).
 
 ---
 
@@ -217,6 +217,18 @@ npm run build
 # Run Backend Tests
 pytest tests/backend
 ```
+
+---
+
+## Vercel Multi-Service Deployment
+
+EzyKwelez is configured to deploy as a unified Vercel project using **Vercel Services** defined in [vercel.json](file:///c:/Users/Admin/Desktop/EzyKwelez/vercel.json):
+
+* **Web Service (`web`)**: Next.js 14 frontend in `apps/web`
+* **API Service (`api`)**: FastAPI backend in `apps/api`
+* **Routing**: Top-level rewrites route `/api/(.*)` to the `api` service and all other routes `/(.*)` to the `web` service on a single unified domain.
+* **Same-Origin API Calls**: In production, browser requests target `/api/*` directly on the same domain without CORS overhead.
+* **Runtime Note**: Backend state uses in-memory repositories during prototype phase. Supabase persistence adapters will replace in-memory state in subsequent phases.
 
 ---
 
