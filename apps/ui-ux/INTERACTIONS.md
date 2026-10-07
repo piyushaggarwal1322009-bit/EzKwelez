@@ -101,12 +101,21 @@
 
 ## 6. Recovery Plan Comparison & Selection
 
-### 6.1 Multi-Plan Side-by-Side Review
-- **Matrix Highlighting:** In the comparison matrix, hovering over a metric row (e.g. "Student Walking Burden") highlights trade-off deltas across Plan A, Plan B, and Plan C.
-- **Winning Indicators:** Mathematically optimal values receive a green badge and checkmark.
+### 6.1 Multi-Plan Side-by-Side Review & Delta Highlighting
+- **Matrix Highlighting:** In the comparison matrix, hovering over any metric row (e.g. "Residual Displaced Students" or "Recovery Time") highlights the winning optimal cell across Plan A, Plan B, and Plan C with an emerald border and percentage delta tag.
+- **Toggle Differences Only:** A switch control `[ Show Differences Only ]` collapses rows where all plans have identical outcomes (e.g., baseline safety compliance), focusing operator attention on differentiating trade-offs.
 
-### 6.2 Decision Factor Inspection
-- Clicking "Explain Score" opens the AI Analyst Panel with pre-populated prompts specifically addressing why the recommended plan outperforms alternatives.
+### 6.2 Objective Score Factor Inspection & Provenance
+- Clicking the `[ Score Breakdown ]` trigger on any candidate card reveals a popover itemizing the 4 multi-objective weights (+Impact Reduction, +Velocity, +Resources, +Risk).
+- AI Grounding Narrative: Clicking `"Why this plan?"` expands a contextual rationale separating engine numbers from narrative explanation.
+
+### 6.3 Constraint Warnings & Blocked Action State Handling
+- When a candidate violates a hard dependency (e.g. generator out of service), the card displays a red `[ ✕ BLOCKED ]` badge.
+- The `[ Approve Recovery ]` button is rendered inert with `aria-disabled="true"` and an informative tooltip: *"Action unavailable: Backup generator blocked until 18:00 maintenance window."*
+
+### 6.4 Stale Recovery Plan Revalidation
+- If incident telemetry changes after plan generation (e.g. room power drops further), a persistent amber banner appears: *"⚠️ Incident conditions changed 4m ago. Candidate plans may be outdated."*
+- Clicking `[ Recalculate Recovery Plans ]` triggers instant background optimization without losing active filter selections.
 
 ---
 
@@ -124,15 +133,17 @@
 
 ## 8. Confirmation & High-Impact Guardrails
 
-### 8.1 Two-Step Confirmation for High-Impact Actions
+### 8.1 Two-Step Confirmation for High-Impact Recovery Execution
 Executing a recovery plan or shutting down a building affects hundreds of students and faculty. The system requires structured safeguards:
-1. **Trigger:** Operator clicks `Approve & Execute Recovery Plan`.
-2. **Modal Presentation:** Displays a dedicated `<ConfirmationDialog>` outlining:
-   - Specific rooms to be locked/opened.
-   - Total number of classes and students to be rerouted.
-   - Student notification broadcast preview.
-3. **Explicit Verification:** Requires checking: `[x] I confirm this intervention will be applied to live campus operations`.
-4. **Action:** `Confirm & Execute` button activates only after verification.
+1. **Trigger:** Operator clicks `[ Review & Approve Plan A ]`.
+2. **Modal Presentation:** Displays a dedicated `<GuardedApprovalModal>` outlining:
+   - Facilities reconnected and specific classrooms unlocked.
+   - Exact classes rerouted and total students affected (e.g. 84 residual students).
+   - Maintenance crew dispatch assignment (Crew Team Alpha -> Substation C).
+   - Automated student broadcast preview drafted for the 438 enrolled cohort members.
+3. **Explicit Verification:** Requires checking: `[x] I confirm this recovery intervention will be applied to live campus operations`.
+4. **Action:** `[ Confirm & Execute Recovery Plan ]` button activates only after verification is checked.
+5. **Focus Safety:** Default keyboard focus is placed on the `[ Cancel ]` button to prevent accidental execution via rapid `Enter` key presses.
 
 ### 8.2 Destructive Action Safeguards
 - Destructive buttons use `--color-status-danger` (`#ef4444`).

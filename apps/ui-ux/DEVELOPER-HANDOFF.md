@@ -386,6 +386,64 @@ export interface IncidentSummaryContract {
 }
 ```
 
+### 6.4 Recovery Experience Suite (`app/(operator)/incidents/[incidentId]/recovery/`)
+For Phase 5, Ishu and Tanisha should structure the Recovery Experience following [`screens/recovery.md`](./screens/recovery.md):
+
+```text
+apps/web/src/
+├── app/(operator)/incidents/[incidentId]/
+│   └── recovery/
+│       ├── page.tsx                     # 4.1 Ranked Recovery Plans List
+│       └── compare/page.tsx             # 4.2 Multi-Plan Comparison Matrix
+└── features/recovery/
+    ├── components/
+    │   ├── RecommendedPlanHeroCard.tsx  # Flagship #1 candidate card
+    │   ├── AlternativePlanCard.tsx      # Ranked alternative card (Plan B/C)
+    │   ├── PlanComparisonMatrix.tsx     # Side-by-side trade-off matrix
+    │   ├── ObjectiveScoreBreakdown.tsx  # Factor weights breakdown popover
+    │   ├── ConstraintStatusBadge.tsx    # Satisfied / Warning / Blocking badge
+    │   ├── GuardedApprovalModal.tsx     # Two-step confirmation modal with verification checkbox
+    │   └── StalePlanBanner.tsx          # Outdated condition warning
+    └── hooks/
+        ├── useRecoveryPlans.ts          # Candidate plan fetching & ranking hook
+        └── useApproveRecoveryPlan.ts    # Guarded approval mutation hook
+```
+
+#### TypeScript Contract Types (Presentation Only):
+```typescript
+export type ConstraintState = 'SATISFIED' | 'WARNING' | 'BLOCKING';
+export type ConfidenceTier = 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
+export type ResourceBurden = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface RecoveryPlanContract {
+  planId: string;
+  planName: string;
+  rank: number;
+  isRecommended: boolean;
+  objectiveScore: number; // 0-100 scale
+  scoreBreakdown: {
+    impactReductionWeight: number; // +38
+    velocityWeight: number;        // +24
+    resourceEfficiencyWeight: number; // +16
+    riskWeight: number;            // +14
+  };
+  expectedRecoveryMinutes: number;
+  residualDisplacedStudents: number;
+  disruptionReductionPercent: number; // e.g. 81%
+  labEquipmentCoveragePercent: number; // e.g. 100%
+  resourceRequirements: {
+    summary: string;
+    crewsCount: number;
+    burdenLevel: ResourceBurden;
+  };
+  operationalRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+  constraintState: ConstraintState;
+  blockingReason?: string;
+  confidence: ConfidenceTier;
+  aiExplanation: string;
+}
+```
+
 ---
 
 ## 7. Design Review & PR Quality Gate
