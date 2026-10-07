@@ -647,3 +647,8 @@ The key architectural decisions governing this platform are formalized in `docs/
 4. [ADR-004: Data Provenance & Operational Data Modes](file:///docs/adr/ADR-004-data-provenance-and-modes.md)
 5. [ADR-005: AI Explanation Boundary & Deterministic Source of Truth](file:///docs/adr/ADR-005-ai-explanation-boundary.md)
 6. [ADR-006: Real-Time Communication Strategy & Evolution Roadmap](file:///docs/adr/ADR-006-future-realtime-strategy.md)
+7. [ADR-007: Dependency Graph Model & Invariants](file:///docs/adr/ADR-007-dependency-graph-model.md)
+8. [ADR-008: Impact Analysis Service Boundary & Structured Report Contract](file:///docs/adr/ADR-008-impact-analysis-boundary.md)
+9. [ADR-009: Graph Traversal Abstraction & Traversal Policy](file:///docs/adr/ADR-009-graph-traversal-abstraction.md)
+10. [ADR-010: Impact Analysis Data Provenance & Stale Telemetry Handling](file:///docs/adr/ADR-010-impact-data-provenance.md)
+

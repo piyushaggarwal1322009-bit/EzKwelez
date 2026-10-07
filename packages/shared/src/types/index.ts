@@ -13,6 +13,13 @@ import {
   ConnectivityQuality,
   DependencyType,
   DependencyCriticality,
+  NodeType,
+  RelationshipType,
+  NodeStatus,
+  Criticality,
+  FailureType,
+  ImpactType,
+  ImpactSeverity,
 } from "../enums";
 
 export interface HealthCheckResponse {
@@ -50,7 +57,7 @@ export interface ApiResponseEnvelope<T> {
 }
 
 // ---------------------------------------------------------------------------
-// Campus & Live Conditions Contracts
+// Campus & Live Conditions Contracts (Phase 3)
 // ---------------------------------------------------------------------------
 
 export interface CampusLocation {
@@ -104,26 +111,30 @@ export interface LiveCampusConditionsResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Dependency Graph Contracts
+// Dependency Graph Contracts (Phase 4)
 // ---------------------------------------------------------------------------
 
 export interface DependencyNode {
   id: string;
+  type: NodeType;
   name: string;
-  type: EntityType;
-  capacity?: number;
-  criticality: DependencyCriticality;
+  status: NodeStatus;
+  criticality: Criticality;
+  locationId?: string;
   metadata?: Record<string, unknown>;
+  createdAt?: string;
 }
 
 export interface DependencyEdge {
   id: string;
-  source: string;
-  target: string;
-  relationship: DependencyType;
-  criticality: DependencyCriticality;
+  sourceNodeId: string;
+  targetNodeId: string;
+  relationship: RelationshipType;
+  direction?: "directed" | "bidirectional";
+  criticality: Criticality;
   weight: number;
   metadata?: Record<string, unknown>;
+  createdAt?: string;
 }
 
 export interface DependencyGraphSnapshot {
@@ -133,8 +144,76 @@ export interface DependencyGraphSnapshot {
   generatedAt: string;
 }
 
+export interface TraversalPolicy {
+  maxDepth?: number;
+  allowedRelationships?: RelationshipType[];
+  minimumCriticality?: Criticality;
+  includeDegraded?: boolean;
+  stopAtFailed?: boolean;
+}
+
+export interface TraversalResult {
+  visitedNodes: string[];
+  visitedEdges: string[];
+  depthByNode: Record<string, number>;
+  cyclesDetected: string[][];
+  warnings: string[];
+}
+
 // ---------------------------------------------------------------------------
-// Incidents & Impact Contracts
+// Failure Event & Impact Analysis Contracts (Phase 4)
+// ---------------------------------------------------------------------------
+
+export interface FailureEvent {
+  id: string;
+  nodeId: string;
+  type: FailureType;
+  severity: Criticality;
+  occurredAt: string;
+  source: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ImpactedNode {
+  nodeId: string;
+  nodeName: string;
+  impactType: ImpactType;
+  impactSeverity: ImpactSeverity;
+  distanceFromRoot: number;
+  criticality: Criticality;
+  reason: string;
+  locationId?: string;
+}
+
+export interface AnalysisProvenance {
+  graphDataMode: DataMode;
+  campusDataMode: DataMode;
+  generatedAt: string;
+  sourceSummary: string;
+}
+
+export interface ImpactReport {
+  analysisId: string;
+  rootNode: DependencyNode;
+  impactedNodes: ImpactedNode[];
+  impactedLocations: string[];
+  severity: ImpactSeverity;
+  propagationDepth: number;
+  generatedAt: string;
+  dataMode: DataMode;
+  provenance: AnalysisProvenance;
+  warnings: string[];
+}
+
+export interface ImpactAnalysisRequest {
+  rootNodeId: string;
+  failureType: FailureType;
+  severity: Criticality;
+  options?: TraversalPolicy;
+}
+
+// ---------------------------------------------------------------------------
+// Incidents & Recovery Contracts
 // ---------------------------------------------------------------------------
 
 export interface IncidentSummary {

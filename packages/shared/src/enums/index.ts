@@ -81,7 +81,36 @@ export enum ConnectivityQuality {
 }
 
 /**
- * Dependency Graph Edge Types
+ * Dependency Graph Node Types
+ */
+export enum NodeType {
+  INFRASTRUCTURE = "infrastructure",
+  UTILITY = "utility",
+  NETWORK = "network",
+  BUILDING = "building",
+  ROOM = "room",
+  SERVICE = "service",
+  SYSTEM = "system",
+  RESOURCE = "resource",
+  OPERATION = "operation",
+}
+
+/**
+ * Canonical Dependency Graph Relationship Types
+ */
+export enum RelationshipType {
+  DEPENDS_ON = "depends_on",
+  SUPPORTS = "supports",
+  FEEDS = "feeds",
+  CONNECTS = "connects",
+  HOSTS = "hosts",
+  SERVES = "serves",
+  REQUIRES = "requires",
+  ALTERNATIVE_TO = "alternative_to",
+}
+
+/**
+ * Historical/Compatibility Dependency Type Enum
  */
 export enum DependencyType {
   POWERED_BY = "POWERED_BY",
@@ -102,4 +131,60 @@ export enum DependencyCriticality {
   MEDIUM = "MEDIUM",
   HIGH = "HIGH",
   CRITICAL = "CRITICAL",
+}
+
+/**
+ * Standard Criticality Levels
+ */
+export enum Criticality {
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  CRITICAL = "critical",
+}
+
+/**
+ * Operational Node State (Decoupled from Incident State)
+ */
+export enum NodeStatus {
+  OPERATIONAL = "operational",
+  DEGRADED = "degraded",
+  DISRUPTED = "disrupted",
+  FAILED = "failed",
+  UNKNOWN = "unknown",
+}
+
+/**
+ * Failure / Disruption Event Types
+ */
+export enum FailureType {
+  OUTAGE = "outage",
+  DEGRADATION = "degradation",
+  FAILURE = "failure",
+  MAINTENANCE = "maintenance",
+  CAPACITY_EXCEEDED = "capacity_exceeded",
+  CONNECTIVITY_LOSS = "connectivity_loss",
+}
+
+/**
+ * Impact Classification Types
+ */
+export enum ImpactType {
+  DIRECT = "direct",
+  INDIRECT = "indirect",
+  DEPENDENT = "dependent",
+  DEGRADED = "degraded",
+  UNAVAILABLE = "unavailable",
+  AT_RISK = "at_risk",
+}
+
+/**
+ * Authoritative Impact Severity
+ */
+export enum ImpactSeverity {
+  NONE = "none",
+  LOW = "low",
+  MODERATE = "moderate",
+  HIGH = "high",
+  CRITICAL = "critical",
 }
