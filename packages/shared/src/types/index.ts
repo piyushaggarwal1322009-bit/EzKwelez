@@ -2,13 +2,27 @@
  * Core Shared Types for EzyKwelez
  */
 
-import { IncidentSeverity, IncidentStatus, EntityType, RecoveryPlanStatus } from "../enums";
+import { UserRole, IncidentSeverity, IncidentStatus, EntityType, RecoveryPlanStatus } from "../enums";
 
 export interface HealthCheckResponse {
   status: string;
   service: string;
   version?: string;
+  environment?: string;
   timestamp?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  fullName: string | null;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateProfileDTO {
+  fullName?: string;
+  role?: UserRole;
 }
 
 export interface IncidentSummary {

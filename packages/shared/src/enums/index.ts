@@ -3,6 +3,12 @@
  * Shared across frontend and backend boundaries
  */
 
+export enum UserRole {
+  STUDENT = "student",
+  STAFF = "staff",
+  ADMIN = "admin",
+}
+
 export enum IncidentSeverity {
   LOW = "LOW",
   MEDIUM = "MEDIUM",
