@@ -1,6 +1,6 @@
 """Authentication and User Profile Routes."""
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from app.api.dependencies import get_current_user
 from app.infrastructure.auth.jwt import AuthenticatedUser
 from app.schemas.profile import UserProfileResponse, UserProfileUpdateRequest
@@ -32,19 +32,21 @@ async def get_my_profile(
     "/me",
     response_model=UserProfileResponse,
     summary="Update current user profile",
-    description="Update profile attributes for the currently authenticated user.",
+    description="Update permitted personal profile attributes for the currently authenticated user.",
 )
 async def update_my_profile(
     update_data: UserProfileUpdateRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> UserProfileResponse:
-    """Update profile attributes for the current user."""
+    """Update profile attributes for the current user.
+
+    SECURITY: Role cannot be modified by user self-updates. It is strictly preserved from current authenticated context.
+    """
     updated_name = update_data.full_name if update_data.full_name is not None else current_user.full_name
-    updated_role = update_data.role if update_data.role is not None else current_user.role
 
     return UserProfileResponse(
         id=current_user.id,
         email=current_user.email,
         full_name=updated_name,
-        role=updated_role,
+        role=current_user.role,
     )

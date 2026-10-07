@@ -3,7 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { APP_NAME, UserRole } from "@ezykwelez/shared";
+import { APP_NAME } from "@ezykwelez/shared";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,7 +14,6 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>(UserRole.STUDENT);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -42,7 +41,7 @@ export default function SignUpPage() {
 
     setIsSubmitting(true);
     try {
-      await signUp({ fullName, email, password, role });
+      await signUp({ fullName, email, password });
       setSuccessMessage("Account created successfully! Redirecting...");
       setTimeout(() => {
         router.push("/app");
@@ -66,7 +65,7 @@ export default function SignUpPage() {
             Campus Disruption Engine
           </Badge>
           <h1 className="text-3xl font-extrabold tracking-tight text-white">{APP_NAME}</h1>
-          <p className="text-sm text-slate-400">Create an account for role-based access</p>
+          <p className="text-sm text-slate-400">Create an account for campus briefings and recovery access</p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -135,22 +134,6 @@ export default function SignUpPage() {
                     placeholder="•••••••• (min 6 characters)"
                     className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1" htmlFor="role">
-                    Operational Role
-                  </label>
-                  <select
-                    id="role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as UserRole)}
-                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  >
-                    <option value={UserRole.STUDENT}>Student (Impact views & briefings)</option>
-                    <option value={UserRole.STAFF}>Staff (Operations & Recovery viewer)</option>
-                    <option value={UserRole.ADMIN}>Admin / Operator (Command Center & Actions)</option>
-                  </select>
                 </div>
 
                 <button

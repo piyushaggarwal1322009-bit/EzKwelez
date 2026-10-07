@@ -22,13 +22,13 @@ def parse_jwt_payload_unverified(token: str) -> Dict[str, Any]:
     parts = token.split(".")
     if len(parts) != 3:
         raise ValueError("Invalid JWT token structure")
-    
+
     # Pad base64 if necessary
     payload_b64 = parts[1]
     rem = len(payload_b64) % 4
     if rem > 0:
         payload_b64 += "=" * (4 - rem)
-        
+
     payload_json = base64.urlsafe_b64decode(payload_b64.encode("utf-8")).decode("utf-8")
     return json.loads(payload_json)
 
@@ -58,17 +58,24 @@ def verify_supabase_token(token: str) -> AuthenticatedUser:
         if not sub:
             raise ValueError("Token missing 'sub' claim")
 
+        app_meta = claims.get("app_metadata", {}) or {}
         user_meta = claims.get("user_metadata", {}) or {}
-        role = user_meta.get("role") or claims.get("role") or "student"
+
+        # SECURITY: Privilege Escalation Prevention
+        # Role must ONLY be extracted from server-managed app_metadata or top-level custom claims.
+        # User metadata (user_metadata) is client-writable and must NEVER be used to assign privileged roles.
+        server_role = app_meta.get("role") or claims.get("role")
+        role = server_role if server_role in ("student", "staff", "admin") else "student"
+
         full_name = user_meta.get("full_name") or user_meta.get("name")
         email = claims.get("email")
 
         return AuthenticatedUser(
             id=str(sub),
             email=email,
-            role=role if role in ("student", "staff", "admin") else "student",
+            role=role,
             full_name=full_name,
-            app_metadata=claims.get("app_metadata", {}) or {},
+            app_metadata=app_meta,
             user_metadata=user_meta,
         )
     except Exception as exc:

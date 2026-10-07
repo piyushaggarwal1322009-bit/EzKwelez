@@ -12,7 +12,7 @@ export class ProfileService {
       .maybeSingle();
 
     if (error) {
-      // If table doesn't exist or query fails in offline/mock mode, return a fallback profile
+      // If table doesn't exist or query fails in offline/mock mode, return a fallback profile with default student role
       return {
         id: userId,
         fullName: null,
@@ -34,9 +34,11 @@ export class ProfileService {
   }
 
   async updateCurrentProfile(userId: string, updates: UpdateProfileDTO): Promise<UserProfile> {
+    // SECURITY: Users can only update permitted personal fields (fullName). Role cannot be modified client-side.
     const payload: Record<string, any> = {};
-    if (updates.fullName !== undefined) payload.full_name = updates.fullName;
-    if (updates.role !== undefined) payload.role = updates.role;
+    if (updates.fullName !== undefined) {
+      payload.full_name = updates.fullName;
+    }
 
     const { data, error } = await this.client
       .from("profiles")

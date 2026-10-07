@@ -1,7 +1,6 @@
 """User profile request and response schemas."""
 
 from typing import Optional
-from datetime import datetime
 from pydantic import BaseModel, Field
 
 
@@ -17,7 +16,9 @@ class UserProfileResponse(BaseModel):
 
 
 class UserProfileUpdateRequest(BaseModel):
-    """User profile update request schema."""
+    """User profile update request schema for normal user self-updates.
+    
+    SECURITY: Role modification is strictly forbidden via user profile self-updates.
+    """
 
     full_name: Optional[str] = Field(default=None, description="Updated full name")
-    role: Optional[str] = Field(default=None, description="Updated role (if authorized)")

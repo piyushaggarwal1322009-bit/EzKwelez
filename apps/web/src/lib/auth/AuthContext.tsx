@@ -29,11 +29,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userProfile = await profileService.getCurrentProfile(currentUser.id);
       setProfile(userProfile);
     } catch {
-      // Fallback local profile structure
+      // Fallback local profile structure defaults strictly to STUDENT role
       setProfile({
         id: currentUser.id,
         fullName: currentUser.user_metadata?.full_name || null,
-        role: (currentUser.user_metadata?.role as UserRole) || UserRole.STUDENT,
+        role: UserRole.STUDENT,
         createdAt: currentUser.created_at,
         updatedAt: currentUser.created_at,
       });

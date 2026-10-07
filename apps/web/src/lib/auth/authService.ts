@@ -1,12 +1,10 @@
 import { getSupabaseClient } from "../supabase/client";
-import { UserRole } from "@ezykwelez/shared";
 import type { Session, User, AuthError } from "@supabase/supabase-js";
 
 export interface SignUpParams {
   email: string;
   password: string;
   fullName: string;
-  role?: UserRole;
 }
 
 export interface SignInParams {
@@ -40,14 +38,14 @@ export function formatAuthError(error: AuthError | Error | null): string {
 export class AuthService {
   private client = getSupabaseClient();
 
-  async signUp({ email, password, fullName, role = UserRole.STUDENT }: SignUpParams) {
+  async signUp({ email, password, fullName }: SignUpParams) {
+    // SECURITY: Only legitimate user metadata (full_name) is sent. Role assignment is strictly server/database-side.
     const { data, error } = await this.client.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
-          role,
         },
       },
     });

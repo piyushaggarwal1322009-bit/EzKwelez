@@ -1,9 +1,10 @@
 -- ==============================================================================
 -- EzyKwelez Supabase Migration: 20261007000001_create_profiles.sql
 -- Phase 2: Profiles Foundation & Row Level Security (RLS)
+-- Security Hardened: Client Privilege Escalation Prevention
 -- ==============================================================================
 
--- Create custom role check constraint domain or table structure
+-- Create profiles table linked 1:1 with auth.users
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT,
@@ -15,29 +16,34 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Comments for schema documentation
 COMMENT ON TABLE public.profiles IS 'Application-level user profile data linked 1:1 with auth.users.';
 COMMENT ON COLUMN public.profiles.id IS 'References auth.users UUID.';
-COMMENT ON COLUMN public.profiles.role IS 'User authorization role (student, staff, admin).';
+COMMENT ON COLUMN public.profiles.role IS 'User authorization role (student, staff, admin). Server/DB managed only.';
 
--- Set up updated_at trigger function
-CREATE OR REPLACE FUNCTION public.handle_updated_at()
+-- Trigger function to protect role column from unauthorized client updates and maintain updated_at
+CREATE OR REPLACE FUNCTION public.protect_profile_role()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+    -- Enforce immutable role: normal profile updates cannot change role
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+        NEW.role = OLD.role;
+    END IF;
     NEW.updated_at = timezone('utc'::text, now());
     RETURN NEW;
 END;
 $$;
 
--- Trigger to update updated_at on profile changes
+-- Trigger to update updated_at and prevent client role escalation
 DROP TRIGGER IF EXISTS on_profiles_updated ON public.profiles;
 CREATE TRIGGER on_profiles_updated
     BEFORE UPDATE ON public.profiles
     FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
+    EXECUTE FUNCTION public.protect_profile_role();
 
 -- Trigger function to automatically create a profile entry when a new user signs up in auth.users
+-- SECURITY: New public signups ALWAYS receive 'student' role. Client user_metadata role is strictly ignored.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -49,12 +55,12 @@ BEGIN
     VALUES (
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
-        COALESCE(NEW.raw_user_meta_data->>'role', 'student')
+        'student' -- Explicitly hardcoded default role for public signups
     )
     ON CONFLICT (id) DO UPDATE
     SET
         full_name = EXCLUDED.full_name,
-        role = EXCLUDED.role,
+        -- role is never updated from user metadata
         updated_at = timezone('utc'::text, now());
     RETURN NEW;
 END;
@@ -77,7 +83,7 @@ CREATE POLICY "profiles_select_own"
     TO authenticated
     USING (auth.uid() = id);
 
--- RLS Policy: Users can only update their own profile
+-- RLS Policy: Users can only update their own profile (role immutability enforced by trigger)
 CREATE POLICY "profiles_update_own"
     ON public.profiles
     FOR UPDATE
@@ -85,7 +91,7 @@ CREATE POLICY "profiles_update_own"
     USING (auth.uid() = id)
     WITH CHECK (auth.uid() = id);
 
--- RLS Policy: User insert allowed for matching UUID
+-- RLS Policy: User insert allowed for matching UUID (with default student role)
 CREATE POLICY "profiles_insert_own"
     ON public.profiles
     FOR INSERT

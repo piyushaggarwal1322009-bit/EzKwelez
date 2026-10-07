@@ -22,7 +22,6 @@ export interface UserProfile {
 
 export interface UpdateProfileDTO {
   fullName?: string;
-  role?: UserRole;
 }
 
 export interface IncidentSummary {
