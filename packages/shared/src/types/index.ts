@@ -23,6 +23,17 @@ import {
   FailureType,
   ImpactType,
   ImpactSeverity,
+  PlanStatus,
+  RecoveryOptionType,
+  Feasibility,
+  ConfidenceLevel,
+  ConstraintType,
+  ConstraintSeverity,
+  ResourceType,
+  PlanningObjectiveType,
+  PlanningObjectivePriority,
+  TradeoffDirection,
+  AssumptionStatus,
 } from "../enums";
 
 export interface HealthCheckResponse {
@@ -69,6 +80,7 @@ export interface CampusLocation {
   type: EntityType;
   campusId: string;
   buildingId?: string;
+  code?: string;
   capacity: number;
   metadata?: Record<string, unknown>;
 }
@@ -76,6 +88,7 @@ export interface CampusLocation {
 export interface OccupancySnapshot {
   locationId: string;
   currentStudents: number;
+  headcount?: number;
   capacity: number;
   occupancyPercentage: number;
   status: OccupancyStatus;
@@ -100,15 +113,17 @@ export interface LocationCondition {
   overallHealth?: "NORMAL" | "DEGRADED" | "CRITICAL";
 }
 
+export interface LiveCampusConditionsSummary {
+  totalLocations: number;
+  totalOccupancy: number;
+  totalCapacity: number;
+  averageOccupancyRate: number;
+  overallSignalScore: number;
+}
+
 export interface LiveCampusConditionsResponse {
   locations: LocationCondition[];
-  summary: {
-    totalLocations: number;
-    totalOccupancy: number;
-    totalCapacity: number;
-    averageOccupancyRate: number;
-    overallSignalScore: number;
-  };
+  summary: LiveCampusConditionsSummary;
   dataMode: DataMode;
   generatedAt: string;
 }
@@ -138,6 +153,11 @@ export interface DependencyEdge {
   weight: number;
   metadata?: Record<string, unknown>;
   createdAt?: string;
+}
+
+export interface DependencyGraph {
+  nodes: Record<string, DependencyNode>;
+  edges: DependencyEdge[];
 }
 
 export interface DependencyGraphSnapshot {
@@ -260,6 +280,7 @@ export interface CreateIncidentRequest {
   type: IncidentType;
   severity: IncidentSeverity;
   source?: IncidentSource;
+  status?: IncidentStatus;
   locationId?: string;
   rootNodeId?: string;
   startedAt?: string;
@@ -270,7 +291,8 @@ export interface CreateIncidentRequest {
 
 export interface TransitionIncidentRequest {
   targetStatus: IncidentStatus;
-  reason: string;
+  reason?: string;
+  message?: string;
   actorId?: string;
   newSeverity?: IncidentSeverity;
   metadata?: Record<string, unknown>;
@@ -327,3 +349,130 @@ export interface RecoveryOptionSummary {
   status: RecoveryPlanStatus;
   reasons?: RecommendationReason[];
 }
+
+// ---------------------------------------------------------------------------
+// Phase 6: Recovery Planning & Decision Support Contracts
+// ---------------------------------------------------------------------------
+
+export interface EstimatedRecoveryTime {
+  value: number;
+  unit: string;
+  confidence: ConfidenceLevel;
+  assumptions?: string[];
+}
+
+export interface ImpactReduction {
+  affectedNodeReduction: number;
+  affectedLocationReduction: number;
+  severityReduction: string;
+  estimatedPercent: number;
+}
+
+export interface ResourceRequirement {
+  resourceType: ResourceType;
+  quantity: number;
+  availability: string;
+  location?: string;
+  source: string;
+}
+
+export interface RecoveryPrerequisite {
+  type: string;
+  description: string;
+  satisfied: boolean;
+  source: string;
+}
+
+export interface RecoveryRisk {
+  description: string;
+  severity: Criticality;
+  likelihood?: string;
+  affectedSystems: string[];
+  mitigation?: string;
+}
+
+export interface RecoveryTradeoff {
+  dimension: string;
+  value: string | number;
+  direction: TradeoffDirection;
+  explanation: string;
+}
+
+export interface RecoveryConstraint {
+  id: string;
+  type: ConstraintType;
+  description: string;
+  severity: ConstraintSeverity;
+  value?: string | number | boolean;
+  source: string;
+}
+
+export interface PlanningAssumption {
+  description: string;
+  source: string;
+  confidence: ConfidenceLevel;
+  status: AssumptionStatus;
+}
+
+export interface PlanningObjective {
+  type: PlanningObjectiveType;
+  weight?: number;
+  priority: PlanningObjectivePriority;
+}
+
+export interface RecoveryOption {
+  id: string;
+  title: string;
+  description: string;
+  type: RecoveryOptionType;
+  feasibility: Feasibility;
+  estimatedRecoveryTime: EstimatedRecoveryTime;
+  estimatedImpactReduction: ImpactReduction;
+  resourceRequirements: ResourceRequirement[];
+  prerequisites: RecoveryPrerequisite[];
+  affectedLocations: string[];
+  affectedNodes: string[];
+  risks: RecoveryRisk[];
+  tradeoffs: RecoveryTradeoff[];
+  confidence: ConfidenceLevel;
+  rank?: number;
+  rationale: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RecoveryPlan {
+  id: string;
+  incidentId: string;
+  impactAnalysisId?: string;
+  version: number;
+  supersedesPlanId?: string;
+  status: PlanStatus;
+  options: RecoveryOption[];
+  constraints: RecoveryConstraint[];
+  assumptions: PlanningAssumption[];
+  objectives: PlanningObjective[];
+  dataMode: DataMode;
+  warnings: string[];
+  generatedAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RecoveryPlanningRequest {
+  incidentId: string;
+  impactAnalysisId?: string;
+  planningObjectives?: PlanningObjective[];
+  constraints?: RecoveryConstraint[];
+  availableResources?: ResourceRequirement[];
+  dataMode?: DataMode;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RecoveryPlanReviewRequest {
+  status: PlanStatus.APPROVED | PlanStatus.REJECTED | PlanStatus.UNDER_REVIEW;
+  reviewedBy: string;
+  reviewNotes?: string;
+}
+

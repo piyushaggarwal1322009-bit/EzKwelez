@@ -1,23 +1,22 @@
 import * as React from "react";
-import Head from "next/head";
+import { AppLayout } from "@/components/layout/app-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { LiveCampusConditions } from "@/features/tanisha";
-import { APP_NAME } from "@ezykwelez/shared";
+import { APP_NAME, DataMode } from "@ezykwelez/shared";
 
 export default function LiveCampusPage() {
   return (
-    <>
-      <Head>
-        <title>{`Live Campus Conditions — ${APP_NAME}`}</title>
-        <meta
-          name="description"
-          content="Live Campus Conditions, occupancy metrics, signal telemetry, and operational rankings."
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
-
-      <main className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8">
-        <LiveCampusConditions />
-      </main>
-    </>
+    <AppLayout
+      title={`Live Campus Conditions — ${APP_NAME}`}
+      description="Live Campus Conditions, occupancy metrics, signal telemetry, and operational rankings."
+      dataMode={DataMode.SIMULATED}
+    >
+      <PageHeader
+        title="Live Conditions Feed"
+        description="Comprehensive real-time telemetry feed across campus facilities."
+        breadcrumbs={[{ label: "Live Conditions" }]}
+      />
+      <LiveCampusConditions />
+    </AppLayout>
   );
 }

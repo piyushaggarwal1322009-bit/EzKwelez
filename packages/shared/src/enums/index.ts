@@ -226,3 +226,127 @@ export enum ImpactSeverity {
   HIGH = "high",
   CRITICAL = "critical",
 }
+
+/**
+ * Phase 6 Recovery Plan Lifecycle Status
+ */
+export enum PlanStatus {
+  DRAFT = "draft",
+  GENERATED = "generated",
+  UNDER_REVIEW = "under_review",
+  APPROVED = "approved",
+  REJECTED = "rejected",
+  SUPERSEDED = "superseded",
+}
+
+/**
+ * Controlled vocabulary for recovery strategies & options
+ */
+export enum RecoveryOptionType {
+  REROUTE = "reroute",
+  FAILOVER = "failover",
+  RELOCATE = "relocate",
+  ISOLATE = "isolate",
+  RESTORE = "restore",
+  SUBSTITUTE = "substitute",
+  REDUCE_LOAD = "reduce_load",
+  PRIORITIZE_SERVICE = "prioritize_service",
+  TEMPORARY_SHUTDOWN = "temporary_shutdown",
+  MANUAL_INTERVENTION = "manual_intervention",
+  OTHER = "other",
+}
+
+/**
+ * Feasibility evaluation classification
+ */
+export enum Feasibility {
+  FEASIBLE = "feasible",
+  CONDITIONALLY_FEASIBLE = "conditionally_feasible",
+  INFEASIBLE = "infeasible",
+  UNKNOWN = "unknown",
+}
+
+/**
+ * Generic confidence level rating
+ */
+export enum ConfidenceLevel {
+  HIGH = "high",
+  MEDIUM = "medium",
+  LOW = "low",
+  UNKNOWN = "unknown",
+}
+
+/**
+ * Recovery constraint categories
+ */
+export enum ConstraintType {
+  RESOURCE = "resource",
+  CAPACITY = "capacity",
+  TIME = "time",
+  DEPENDENCY = "dependency",
+  SAFETY = "safety",
+  AVAILABILITY = "availability",
+  LOCATION = "location",
+  POLICY = "policy",
+  STAFFING = "staffing",
+}
+
+/**
+ * Constraint enforcement severity
+ */
+export enum ConstraintSeverity {
+  HARD = "hard",
+  SOFT = "soft",
+}
+
+/**
+ * Operational resource types
+ */
+export enum ResourceType {
+  TECHNICIAN = "technician",
+  BACKUP_POWER = "backup_power",
+  BACKUP_NETWORK = "backup_network",
+  AVAILABLE_ROOM = "available_room",
+  EQUIPMENT = "equipment",
+  STAFF = "staff",
+  TIME_WINDOW = "time_window",
+  OTHER = "other",
+}
+
+/**
+ * Recovery planning objective types
+ */
+export enum PlanningObjectiveType {
+  MINIMIZE_RECOVERY_TIME = "minimize_recovery_time",
+  MINIMIZE_STUDENT_DISRUPTION = "minimize_student_disruption",
+  MINIMIZE_RESOURCE_USE = "minimize_resource_use",
+  MAXIMIZE_SERVICE_CONTINUITY = "maximize_service_continuity",
+  MINIMIZE_OPERATIONAL_RISK = "minimize_operational_risk",
+}
+
+/**
+ * Objective priority rating
+ */
+export enum PlanningObjectivePriority {
+  HIGH = "high",
+  MEDIUM = "medium",
+  LOW = "low",
+}
+
+/**
+ * Relative trade-off comparison direction
+ */
+export enum TradeoffDirection {
+  BETTER = "better",
+  WORSE = "worse",
+  NEUTRAL = "neutral",
+}
+
+/**
+ * Planning assumption status
+ */
+export enum AssumptionStatus {
+  VALID = "valid",
+  TENTATIVE = "tentative",
+  REFUTED = "refuted",
+}
