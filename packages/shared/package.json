@@ -1,0 +1,14 @@
+{
+  "name": "@ezykwelez/shared",
+  "version": "0.1.0",
+  "description": "Shared contracts, types, enums, and constants for EzyKwelez",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

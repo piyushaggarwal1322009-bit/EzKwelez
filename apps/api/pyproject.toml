@@ -1,0 +1,22 @@
+[project]
+name = "ezykwelez-api"
+version = "0.1.0"
+description = "FastAPI Backend Modular Monolith for EzyKwelez Campus Disruption Engine"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.2.0",
+    "python-dotenv>=1.0.1",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests/backend"]
+python_files = ["test_*.py"]

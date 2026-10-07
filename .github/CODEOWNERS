@@ -1,0 +1,35 @@
+# ==============================================================================
+# EzyKwelez CODEOWNERS
+# ==============================================================================
+# Ownership is enforced via GitHub PR reviews, protected main branch, and team process.
+#
+# IMPORTANT: Replace these placeholders with the team's actual GitHub usernames:
+#   @PIYUSH_GITHUB_USERNAME  -> Backend / Integration Lead (Piyush)
+#   @AILE_GITHUB_USERNAME    -> UI/UX Lead (Aile)
+#   @ISHU_GITHUB_USERNAME    -> Frontend Feature Engineer (Ishu)
+#   @TANISHA_GITHUB_USERNAME -> Frontend Feature Engineer (Tanisha)
+# ==============================================================================
+
+# Default global ownership across the monorepo
+*                                   @PIYUSH_GITHUB_USERNAME @AILE_GITHUB_USERNAME @ISHU_GITHUB_USERNAME @TANISHA_GITHUB_USERNAME
+
+# Architecture & Project Documentation
+/docs/                              @PIYUSH_GITHUB_USERNAME @AILE_GITHUB_USERNAME @ISHU_GITHUB_USERNAME @TANISHA_GITHUB_USERNAME
+
+# Shared Type Definitions & Contracts
+/packages/shared/                   @PIYUSH_GITHUB_USERNAME @ISHU_GITHUB_USERNAME @TANISHA_GITHUB_USERNAME
+
+# Backend Services, Database, Infrastructure & Backend Tests
+/apps/api/                          @PIYUSH_GITHUB_USERNAME
+/supabase/                          @PIYUSH_GITHUB_USERNAME
+/tests/backend/                     @PIYUSH_GITHUB_USERNAME
+
+# UI/UX Specifications, Design Tokens & Assets
+/apps/ui-ux/                        @AILE_GITHUB_USERNAME
+
+# Frontend Application (Shared Web App)
+/apps/web/                          @ISHU_GITHUB_USERNAME @TANISHA_GITHUB_USERNAME
+
+# Specific Frontend Feature Areas
+/apps/web/src/features/ishu/        @ISHU_GITHUB_USERNAME
+/apps/web/src/features/tanisha/     @TANISHA_GITHUB_USERNAME
