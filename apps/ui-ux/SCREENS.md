@@ -56,48 +56,63 @@
 
 ---
 
-### 2.1 Live Campus: Overview
+### 2. Live Campus Area
 
+> **Modular Screen Spec:** See [`screens/live-campus.md`](./screens/live-campus.md) for exhaustive layout diagrams, telemetry provenance contracts, and location health matrices.
+
+#### 2.1 Live Campus: Overview
 - **Product Area:** `2. Live Campus` (Sub-view: `Overview`)
-- **User Goal:** Visually explore physical campus topology, building health, and infrastructure dependency lines.
-- **Primary Question Answered:** *"Where are disruptions physically located and which adjacent facilities are affected?"*
+- **User Goal:** Executive continuous surveillance across all 18 buildings; immediately isolate locations with deteriorating occupancy or connectivity conditions.
+- **Primary Question Answered:** *"What is happening across my campus right now and where are operational conditions changing?"*
 - **4-Level Information Hierarchy:**
-  - **Level 1 (Top Takeaway):** Interactive 2D Campus Vector Map with real-time building health color fills.
-  - **Level 2 (Contextual Explanation):** Hover tooltips & utility dependency overlay lines (Substation A -> Building B).
-  - **Level 3 (Actions):** `[ Select Building to Inspect ]`, `[ Toggle Layer Overlays (Power/Network/HVAC) ]`.
-  - **Level 4 (Inspection Detail):** Slide-over Building Detail Drawer (closed rooms, scheduled classes, equipment).
-- **Important Components:** `<DecisionMap>`, `<BuildingPolygon>`, `<DependencyEdge>`, `<LayerToggle>`, `<Drawer>`.
-- **Responsive Behavior:** Pinned right drawer on desktop; pinch-to-zoom map + bottom sheet modal on mobile.
+  - **Level 1 (Top Takeaway):** Top Metric Health Strip (Overall Campus Health 94%, Aggregate Occupancy 72%, Grid Connectivity 91%, Freshness Gauge: `LIVE · Synced 12s ago`).
+  - **Level 2 (Contextual Explanation):** 18-Building Operational Health Schematic Grid + Notable Condition Changes Feed.
+  - **Level 3 (Actions):** `[ Inspect Location ]`, `[ Filter by Status (All / Watch / Degraded / Critical) ]`, `[ Toggle Accessible Table ]`.
+  - **Level 4 (Inspection Detail):** Slide-over Location Detail Drawer with 60-minute telemetry delta and linked incident tags.
+- **Important Components:** `<CampusHealthMatrix>`, `<ConditionChangesFeed>`, `<LocationHealthBadge>`, `<FreshnessPill>`, `<DataTable>`.
+- **Responsive Behavior:** 18-card schematic + sidebar feed on desktop; 2-column scrollable grid on tablet; prioritized Watch/Degraded card stack on mobile.
 
 ---
 
-### 2.2 Live Campus: Occupancy
-
+#### 2.2 Live Campus: Occupancy
 - **Product Area:** `2. Live Campus` (Sub-view: `Occupancy`)
-- **User Goal:** Monitor real-time and scheduled room utilization to identify overflow risks and relocation space.
-- **Primary Question Answered:** *"Which rooms have available capacity to absorb relocated classes right now?"*
+- **User Goal:** Monitor real-time and scheduled room utilization to identify overflow risks, detect crowding velocity, and discover absorption space for relocations.
+- **Primary Question Answered:** *"Which rooms have available capacity to absorb relocated classes right now, and which are approaching capacity?"*
 - **4-Level Information Hierarchy:**
-  - **Level 1 (Top Takeaway):** Peak Utilization Timeline Chart & Campus-wide Overflow Risk Metric.
-  - **Level 2 (Contextual Explanation):** Building-by-building capacity heatmaps with color thresholds (<70% Green, 70-89% Amber, >=90% Red).
-  - **Level 3 (Actions):** `[ Find Available Alternative Rooms ]`, `[ Filter by Minimum Capacity ]`.
-  - **Level 4 (Inspection Detail):** Searchable room inventory `<DataTable>` with equipment tags and tabular occupant ratios.
-- **Important Components:** `<DataTable>`, `<UtilizationBar>`, `<FilterToolbar>`, `<EquipmentBadgeGroup>`.
-- **Responsive Behavior:** Full multi-column data grid on desktop; adaptive card stack on mobile.
+  - **Level 1 (Top Takeaway):** Campus Occupancy Velocity Gauge & Overflow Risk Count (`2 Rooms ≥90%`).
+  - **Level 2 (Contextual Explanation):** Building-by-building capacity cards with color thresholds (<70% Normal, 70-89% Elevated, ≥90% Overflow Risk) and trajectory trends (Increasing, Stable, Decreasing).
+  - **Level 3 (Actions):** `[ Filter by Minimum Free Capacity ]`, `[ Find Available Alternative Rooms ]`, `[ Sort by Proximity to Capacity ]`.
+  - **Level 4 (Inspection Detail):** Searchable room inventory `<DataTable>` with sensor provenance badges (`LIVE`, `ESTIMATED`, `SIMULATED`).
+- **Important Components:** `<OccupancyScorecard>`, `<UtilizationBar>`, `<TrendBadge>`, `<FilterToolbar>`, `<DataTable>`.
+- **Responsive Behavior:** Multi-column data table with utilization bars on desktop; swipeable building cards on tablet/mobile.
 
 ---
 
-### 2.3 Live Campus: Connectivity
-
+#### 2.3 Live Campus: Connectivity
 - **Product Area:** `2. Live Campus` (Sub-view: `Connectivity`)
-- **User Goal:** Inspect campus utility grids (Power, Optical Fiber, HVAC) and identify single points of failure.
-- **Primary Question Answered:** *"If this network switch or power substation fails, what downstream buildings go offline?"*
+- **User Goal:** Inspect campus utility grids (Power Substations, Optical Fiber, IoT Gateways) and identify single points of failure.
+- **Primary Question Answered:** *"If this network switch or power substation degrades, what downstream facilities and rooms are at risk?"*
 - **4-Level Information Hierarchy:**
-  - **Level 1 (Top Takeaway):** Utility Grid Operational Health Index (`98% Operational`).
-  - **Level 2 (Contextual Explanation):** Node-link utility topology diagram (Substations -> Distribution Switches -> Edge Nodes).
-  - **Level 3 (Actions):** `[ Trigger Synthetic Outage Test ]`, `[ Trace Downstream Dependencies ]`.
-  - **Level 4 (Inspection Detail):** Node latency metrics, load levels (`JetBrains Mono`), and dependent building list.
-- **Important Components:** `<DependencyGraphNode>`, `<TopologyCanvas>`, `<HealthMetric>`, `<DataTable>`.
-- **Responsive Behavior:** Zoomable canvas on desktop; hierarchical `<ol role="tree">` list on mobile.
+  - **Level 1 (Top Takeaway):** Utility Grid Operational Health Index (`91% Utility Health · Substation A Degraded`).
+  - **Level 2 (Contextual Explanation):** Node signal health cards (Signal bars + Score 0–100 + States: `EXCELLENT`, `GOOD`, `DEGRADED`, `POOR`, `OFFLINE`, `UNKNOWN`).
+  - **Level 3 (Actions):** `[ Trace Downstream Dependencies ]`, `[ Filter by Subsystem (Power / Network / IoT) ]`.
+  - **Level 4 (Inspection Detail):** Gateway ping latency (`JetBrains Mono ms`), packet loss %, and dependent room list.
+- **Important Components:** `<ConnectivitySignalCard>`, `<SignalBars>`, `<LatencyBadge>`, `<TopologyCanvas>`, `<DataTable>`.
+- **Responsive Behavior:** Grid topology visualizer on desktop; hierarchical tree card list on tablet/mobile.
+
+---
+
+#### 2.4 Live Campus: Location Detail
+- **Product Area:** `2. Live Campus` (Sub-view: `Location Detail`)
+- **User Goal:** Deep dive into a single facility's environmental health, synthesizing occupancy and connectivity into a deterministic verdict.
+- **Primary Question Answered:** *"Why is this specific building flagged and what operational action should I take?"*
+- **4-Level Information Hierarchy:**
+  - **Level 1 (Top Takeaway):** Pinned Location Header (Building Name, Health Badge `WATCH`, Freshness `LIVE · 42s ago`).
+  - **Level 2 (Contextual Explanation):** Synchronized Dual-Metric Breakdown (Occupancy 73% Increasing + Connectivity 64% Degraded) + 60m Delta Log.
+  - **Level 3 (Actions):** `[ Escalate to Incident Queue ]`, `[ Compare Nearby Available Rooms ]`, `[ Return to Overview ]`.
+  - **Level 4 (Inspection Detail):** Room-by-room sensor telemetry grid and IoT gateway ping history.
+- **Important Components:** `<LocationDetailDossier>`, `<DualMetricCard>`, `<DeltaLogTimeline>`, `<ActionButtonGroup>`.
+- **Responsive Behavior:** Side-by-side metric panels on desktop; sticky header + stacked panels in mobile bottom sheet.
 
 ---
 

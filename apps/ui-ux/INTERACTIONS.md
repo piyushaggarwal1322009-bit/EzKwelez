@@ -142,3 +142,22 @@ EzyKwelez enforces a **Zero Dead-End Guarantee**:
 | **Telemetry Outage / Error** | Red alert banner: *"Unable to load live campus graph."* | Action: `[ Retry Connection ]` button with exponential backoff indicator. |
 | **No Feasible Recovery Plans** | Warning panel: *"Zero rooms satisfy specialized lab equipment constraint."* | Action: `[ Relax Constraints ]` or `[ Open What-If Simulation ]`. |
 | **Incident Resolved** | Green badge: *"Incident resolved 12m ago. Recovery plan executed."* | Actions: `[ View Audit Trail ]` or `[ Return to Command Center ]`. |
+
+---
+
+## 10. Live Campus Telemetry & Location Inspection Interactions
+
+### 10.1 Location Health Selection & Dual-View Inspection
+- **Schematic-to-Table Dual-View Toggle:** Operators can switch between the visual 18-building operational schematic and an accessible `<DataTable>` with a single click. The active selection persists across view switches.
+- **Location Detail Drawer:** Clicking any building card or table row triggers a 400px Level 4 slide-over drawer showing dual-metric breakdowns (Occupancy + Connectivity) and a 60-minute environmental delta timeline.
+
+### 10.2 Continuous Telemetry Sync & Stale Revalidation
+- **Polling Cadence:** Telemetry polls every 15s in active viewports. When the tab is backgrounded, polling drops to 60s.
+- **Stale State Recovery:** If sync exceeds 5m, the freshness badge turns amber (`STALE · 18m ago`). Clicking the badge initiates an instant background revalidation without clearing existing UI data.
+
+### 10.3 Telemetry-to-Incident Escalation Boundary
+- **Separation Principle:** Observed anomalies (e.g. Substation A voltage drop) display as *"Potential Operational Concern"*, not an automatic incident.
+- **Escalation Interaction:** Clicking `[ Escalate to Incident Queue → ]` in the Location Detail panel opens the Incident Creation modal with pre-populated building ID, current occupancy (438), and affected utility node.
+
+### 10.4 Relocation & Absorption Space Finder
+- In the Occupancy view, clicking `[ Find Available Alternative Rooms ]` filters rooms with utilization `<60%`, compatible equipment tags, and sorts them by shortest walking distance from the source building.

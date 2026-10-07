@@ -247,9 +247,10 @@ Every component developed by the frontend team must implement all 5 mandatory st
 
 ---
 
-## 6. Flagship Screen Implementation: Command Center
+## 6. Flagship Screen Implementation Contracts
 
-For Phase 2, Ishu and Tanisha should structure the Command Center (`app/(operator)/command-center/page.tsx`) following the modular specification in [`screens/command-center.md`](./screens/command-center.md):
+### 6.1 Command Center (`app/(operator)/command-center/page.tsx`)
+For Phase 2, Ishu and Tanisha should structure the Command Center following the modular specification in [`screens/command-center.md`](./screens/command-center.md):
 
 ```text
 apps/web/src/
@@ -265,6 +266,61 @@ apps/web/src/
     │   └── RecommendedActionPanel.tsx   # Grounded decision recommendation & trade-off summary
     └── hooks/
         └── useCommandCenterState.ts     # Aggregated presentation state hook
+```
+
+### 6.2 Live Campus Suite (`app/(operator)/live-campus/`)
+For Phase 3, Ishu and Tanisha should structure the Live Campus suite following [`screens/live-campus.md`](./screens/live-campus.md):
+
+```text
+apps/web/src/
+├── app/(operator)/live-campus/
+│   ├── page.tsx                         # 2.1 Live Campus Overview
+│   ├── occupancy/page.tsx               # 2.2 Occupancy Monitor
+│   ├── connectivity/page.tsx            # 2.3 Connectivity & Infrastructure
+│   └── [locationId]/page.tsx            # 2.4 Location Detail Dossier
+└── features/live-campus/
+    ├── components/
+    │   ├── CampusHealthMatrix.tsx       # 18-building operational schematic + accessible table
+    │   ├── OccupancyScorecard.tsx       # Capacity bar, occupancy count, trend badge
+    │   ├── ConnectivitySignalCard.tsx   # Signal bars, score (0-100), latency ms, SPOF tags
+    │   ├── LocationHealthBadge.tsx      # Unified verdict (NORMAL, WATCH, DEGRADED, CRITICAL, UNKNOWN)
+    │   ├── FreshnessPill.tsx            # Provenance badge (LIVE, SIMULATED, ESTIMATED, STALE, UNAVAILABLE)
+    │   └── ConditionChangesFeed.tsx     # Timestamped environmental delta stream
+    └── hooks/
+        ├── useLiveCampusOverview.ts     # Aggregated campus health hook
+        ├── useOccupancyTelemetry.ts     # Real-time room occupancy & polling hook
+        └── useConnectivityTelemetry.ts  # Node connectivity & latency query hook
+```
+
+#### TypeScript Contract Types (Presentation Only):
+```typescript
+export type TelemetryProvenance = 'LIVE' | 'SIMULATED' | 'ESTIMATED' | 'STALE' | 'UNAVAILABLE' | 'UNKNOWN';
+export type LocationHealthState = 'NORMAL' | 'WATCH' | 'DEGRADED' | 'CRITICAL' | 'UNKNOWN';
+export type OccupancyTrend = 'INCREASING' | 'STABLE' | 'DECREASING';
+export type ConnectionQuality = 'EXCELLENT' | 'GOOD' | 'DEGRADED' | 'POOR' | 'OFFLINE' | 'UNKNOWN';
+
+export interface LocationTelemetrySummary {
+  locationId: string;
+  locationName: string;
+  campusZone: string;
+  healthState: LocationHealthState;
+  occupancy: {
+    current: number;
+    capacity: number;
+    utilizationPercent: number;
+    trend: OccupancyTrend;
+    provenance: TelemetryProvenance;
+    updatedAt: string;
+  };
+  connectivity: {
+    score: number; // 0-100
+    quality: ConnectionQuality;
+    latencyMs?: number;
+    provenance: TelemetryProvenance;
+    updatedAt: string;
+  };
+  activeIncidentId?: string;
+}
 ```
 
 ---

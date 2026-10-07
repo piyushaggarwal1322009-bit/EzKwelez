@@ -72,6 +72,16 @@ DESKTOP (>= 1280px)        LAPTOP (1024-1279px)       TABLET (768-1023px)       
 - **Desktop / Tablet:** Centered modal with max-width `540px` and elevation shadow.
 - **Mobile:** Converts to a **Bottom Sheet Dialog** docked to the bottom with `100%` width and rounded top corners (`radius-xl`), keeping buttons within easy thumb reach.
 
+### 4.5 Live Campus Telemetry Matrix & Mobile Health Stack
+- **Desktop (>= 1280px):** 18-building operational schematic + right-column Notable Condition Changes feed.
+- **Tablet (768px – 1023px):** 2-column scrollable building card grid; changes feed docks beneath the grid.
+- **Mobile (< 768px):** Prioritized Attention Stack:
+  1. Top sticky status strip (`94% Normal · 2 Watch Locations`).
+  2. Filter chips (`[ All ] [ Watch (2) ] [ Degraded (0) ]`).
+  3. Prominent full-width cards for flagged locations (`Science Building B · Watch`).
+  4. Collapsible accordion group for all healthy/normal buildings (`16 Healthy Facilities ▼`).
+  5. 3-segment sub-view tab docked above bottom nav (`Overview` | `Occupancy` | `Connectivity`).
+
 ---
 
 ## 5. Responsive Validation Checklist
