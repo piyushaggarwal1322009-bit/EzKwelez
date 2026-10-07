@@ -57,8 +57,7 @@ export default function LiveCampusPage() {
 
           {/* Embedded Reusable Live Campus Conditions Module */}
           <LiveCampusConditions
-            autoRefreshIntervalMs={0}
-            showSimulationControls={true}
+            showScenarioSelector={true}
           />
         </div>
       </main>
