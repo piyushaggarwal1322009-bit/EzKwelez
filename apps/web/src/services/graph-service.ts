@@ -55,6 +55,15 @@ const MOCK_TOPOLOGY_NODES: Record<string, DependencyNode> = {
     locationId: "r0000000-0000-0000-0000-000000000003",
     createdAt: "2026-10-07T00:00:00Z",
   },
+  "n0000000-0000-0000-0000-000000000004": {
+    id: "n0000000-0000-0000-0000-000000000004",
+    type: NodeType.NETWORK,
+    name: "Core Optical Backbone Switch SW-B1",
+    status: NodeStatus.OPERATIONAL,
+    criticality: Criticality.CRITICAL,
+    locationId: "b0000000-0000-0000-0000-000000000002",
+    createdAt: "2026-10-07T00:00:00Z",
+  },
   "n0000000-0000-0000-0000-000000000007": {
     id: "n0000000-0000-0000-0000-000000000007",
     type: NodeType.ROOM,
@@ -62,6 +71,15 @@ const MOCK_TOPOLOGY_NODES: Record<string, DependencyNode> = {
     status: NodeStatus.OPERATIONAL,
     criticality: Criticality.LOW,
     locationId: "r0000000-0000-0000-0000-000000000009",
+    createdAt: "2026-10-07T00:00:00Z",
+  },
+  "n0000000-0000-0000-0000-000000000008": {
+    id: "n0000000-0000-0000-0000-000000000008",
+    type: NodeType.UTILITY,
+    name: "Emergency Diesel Backup Generator Gen-2",
+    status: NodeStatus.OPERATIONAL,
+    criticality: Criticality.HIGH,
+    locationId: "b0000000-0000-0000-0000-000000000002",
     createdAt: "2026-10-07T00:00:00Z",
   },
 };
@@ -99,11 +117,49 @@ const MOCK_TOPOLOGY_EDGES: DependencyEdge[] = [
     criticality: Criticality.HIGH,
     weight: 1.0,
   },
+  {
+    id: "e-05",
+    sourceNodeId: "n0000000-0000-0000-0000-000000000001",
+    targetNodeId: "n0000000-0000-0000-0000-000000000004",
+    relationship: RelationshipType.FEEDS,
+    criticality: Criticality.HIGH,
+    weight: 1.0,
+  },
+  {
+    id: "e-06",
+    sourceNodeId: "n0000000-0000-0000-0000-000000000002",
+    targetNodeId: "n0000000-0000-0000-0000-000000000007",
+    relationship: RelationshipType.HOSTS,
+    criticality: Criticality.LOW,
+    weight: 1.0,
+  },
+  {
+    id: "e-07",
+    sourceNodeId: "n0000000-0000-0000-0000-000000000008",
+    targetNodeId: "n0000000-0000-0000-0000-000000000001",
+    relationship: RelationshipType.ALTERNATIVE_TO,
+    criticality: Criticality.HIGH,
+    weight: 1.0,
+  },
 ];
 
 export const graphService = {
   async getTopology(): Promise<DependencyGraph> {
     try {
+      const res = await apiClient.get<any>("/dependencies/graph");
+      if (res && res.nodes && Array.isArray(res.nodes)) {
+        const nodeMap: Record<string, DependencyNode> = {};
+        res.nodes.forEach((n: DependencyNode) => {
+          nodeMap[n.id] = n;
+        });
+        return {
+          nodes: nodeMap,
+          edges: res.edges || [],
+        };
+      }
+      if (res && res.nodes && typeof res.nodes === "object") {
+        return res;
+      }
       return await apiClient.get<DependencyGraph>("/graph/topology");
     } catch {
       return {
@@ -115,28 +171,36 @@ export const graphService = {
 
   async listNodes(): Promise<DependencyNode[]> {
     try {
-      return await apiClient.get<DependencyNode[]>("/graph/nodes");
+      return await apiClient.get<DependencyNode[]>("/dependencies/nodes");
     } catch {
-      return Object.values(MOCK_TOPOLOGY_NODES);
+      try {
+        return await apiClient.get<DependencyNode[]>("/graph/nodes");
+      } catch {
+        return Object.values(MOCK_TOPOLOGY_NODES);
+      }
     }
   },
 
   async getNode(id: string): Promise<DependencyNode> {
     try {
-      return await apiClient.get<DependencyNode>(`/graph/nodes/${id}`);
+      return await apiClient.get<DependencyNode>(`/dependencies/nodes/${id}`);
     } catch {
-      return MOCK_TOPOLOGY_NODES[id] || Object.values(MOCK_TOPOLOGY_NODES)[0];
+      try {
+        return await apiClient.get<DependencyNode>(`/graph/nodes/${id}`);
+      } catch {
+        return MOCK_TOPOLOGY_NODES[id] || Object.values(MOCK_TOPOLOGY_NODES)[0];
+      }
     }
   },
 
   async listEdges(nodeId?: string, direction?: "incoming" | "outgoing"): Promise<DependencyEdge[]> {
     const query = new URLSearchParams();
-    if (nodeId) query.set("node_id", nodeId);
+    if (nodeId) query.set("nodeId", nodeId);
     if (direction) query.set("direction", direction);
 
     const qs = query.toString();
     try {
-      return await apiClient.get<DependencyEdge[]>(`/graph/edges${qs ? `?${qs}` : ""}`);
+      return await apiClient.get<DependencyEdge[]>(`/dependencies/edges${qs ? `?${qs}` : ""}`);
     } catch {
       let filtered = [...MOCK_TOPOLOGY_EDGES];
       if (nodeId) {

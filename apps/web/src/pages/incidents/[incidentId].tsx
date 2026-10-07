@@ -300,7 +300,7 @@ export default function IncidentDetailPage() {
                   <GitFork className="w-4 h-4 text-purple-400" /> Root Topology Node
                 </div>
                 {rootNode ? (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <Link
                       href={`/dependencies`}
                       className="text-xs font-medium text-purple-400 hover:underline block"
@@ -310,6 +310,12 @@ export default function IncidentDetailPage() {
                     <span className="text-[11px] text-slate-400 font-mono block">
                       Type: {rootNode.type.toUpperCase()} • Criticality: {rootNode.criticality}
                     </span>
+                    <Link
+                      href={`/impact?incidentId=${incident.id}&rootNodeId=${rootNode.id}`}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 transition pt-1"
+                    >
+                      <AlertOctagon className="w-3.5 h-3.5" /> Analyze Blast Radius &rarr;
+                    </Link>
                   </div>
                 ) : (
                   <span className="text-xs text-slate-500">No root system linked</span>
