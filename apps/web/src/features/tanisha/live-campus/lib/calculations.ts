@@ -1,7 +1,12 @@
 /**
- * Operational Calculations Library for Live Campus Conditions
- * Centralizes all mathematical rules, thresholds, rankings, and freshness logic.
- * Follows Single Responsibility and avoids magic numbers across components.
+ * Centralized Domain Calculations for Live Campus Conditions
+ * Feature Owner: Tanisha
+ * Module: @/features/tanisha/live-campus
+ *
+ * Rules:
+ * - All thresholds, status derivations, and summary metrics MUST live here.
+ * - No magic numbers scattered across UI components.
+ * - Pure, deterministic, and fully testable without browser or network dependencies.
  */
 
 import {
@@ -10,14 +15,15 @@ import {
   Freshness,
   OccupancySnapshot,
   ConnectivitySnapshot,
-  CampusLocation,
+  LocationCondition,
   CampusOverviewMetrics,
-  LocationRankingItem,
-} from '../types/campus';
+  RankedOccupancy,
+  RankedConnectivity,
+} from "../types/campus";
 
-// ==========================================
-// THRESHOLD CONSTANTS
-// ==========================================
+// ============================================================================
+// Central Threshold Constants
+// ============================================================================
 
 export const OCCUPANCY_THRESHOLDS = {
   LOW_MAX: 49,
@@ -27,348 +33,381 @@ export const OCCUPANCY_THRESHOLDS = {
 } as const;
 
 export const CONNECTIVITY_THRESHOLDS = {
+  VERY_WEAK_MAX: 19,
+  WEAK_MAX: 39,
+  FAIR_MAX: 59,
+  GOOD_MAX: 79,
   EXCELLENT_MIN: 80,
-  GOOD_MIN: 60,
-  FAIR_MIN: 40,
-  WEAK_MIN: 20,
 } as const;
 
-export const FRESHNESS_THRESHOLDS = {
+export const FRESHNESS_THRESHOLDS_MS = {
   FRESH_MAX_MS: 60 * 1000, // 60 seconds
   STALE_MAX_MS: 5 * 60 * 1000, // 5 minutes
 } as const;
 
-// ==========================================
-// OCCUPANCY CALCULATIONS
-// ==========================================
+// ============================================================================
+// Occupancy Calculations
+// ============================================================================
 
 /**
- * Calculates derived occupancy percentage from current count and capacity.
- * Handles edge cases such as zero capacity and negative numbers gracefully.
+ * Calculates the occupancy percentage from current count and capacity.
+ * Handles invalid or zero capacity safely without throwing.
  */
 export function calculateOccupancyPercentage(
   currentCount: number,
   capacity: number
 ): number {
-  if (!Number.isFinite(capacity) || capacity <= 0) {
+  if (typeof currentCount !== "number" || isNaN(currentCount) || currentCount < 0) {
     return 0;
   }
-  const safeCount = Math.max(0, Number.isFinite(currentCount) ? currentCount : 0);
-  const rawPercentage = (safeCount / capacity) * 100;
-  return Math.round(rawPercentage);
+  if (typeof capacity !== "number" || isNaN(capacity) || capacity <= 0) {
+    return 0;
+  }
+
+  const rawPercent = (currentCount / capacity) * 100;
+  return Math.round(rawPercent * 10) / 10;
 }
 
 /**
- * Derives occupancy operational status from percentage using centralized thresholds:
- * 0–49%: Low
- * 50–74%: Moderate
- * 75–89%: Busy
- * 90–100%: Very Busy
- * >100%: Over Capacity
+ * Derives the OccupancyStatus enum from an occupancy percentage.
+ *
+ * Threshold rules:
+ * 0–49%       -> low
+ * 50–74%      -> moderate
+ * 75–89%      -> busy
+ * 90–100%     -> very_busy
+ * >100%       -> over_capacity
  */
-export function calculateOccupancyStatus(percentage: number): OccupancyStatus {
-  if (percentage > OCCUPANCY_THRESHOLDS.VERY_BUSY_MAX) {
-    return 'over_capacity';
+export function deriveOccupancyStatus(percentage: number): OccupancyStatus {
+  if (typeof percentage !== "number" || isNaN(percentage) || percentage < 0) {
+    return "low";
   }
-  if (percentage >= OCCUPANCY_THRESHOLDS.BUSY_MAX + 1) {
-    return 'very_busy';
+
+  if (percentage <= OCCUPANCY_THRESHOLDS.LOW_MAX) {
+    return "low";
   }
-  if (percentage >= OCCUPANCY_THRESHOLDS.MODERATE_MAX + 1) {
-    return 'busy';
+  if (percentage <= OCCUPANCY_THRESHOLDS.MODERATE_MAX) {
+    return "moderate";
   }
-  if (percentage >= OCCUPANCY_THRESHOLDS.LOW_MAX + 1) {
-    return 'moderate';
+  if (percentage <= OCCUPANCY_THRESHOLDS.BUSY_MAX) {
+    return "busy";
   }
-  return 'low';
+  if (percentage <= OCCUPANCY_THRESHOLDS.VERY_BUSY_MAX) {
+    return "very_busy";
+  }
+  return "over_capacity";
 }
 
-export function formatOccupancyStatus(status: OccupancyStatus): string {
-  switch (status) {
-    case 'low':
-      return 'Low';
-    case 'moderate':
-      return 'Moderate';
-    case 'busy':
-      return 'Busy';
-    case 'very_busy':
-      return 'Very Busy';
-    case 'over_capacity':
-      return 'Over Capacity';
-    default:
-      return 'Unknown';
-  }
-}
-
-export function getOccupancyStatusVariant(
-  status: OccupancyStatus
-): 'success' | 'warning' | 'critical' | 'default' {
-  switch (status) {
-    case 'low':
-      return 'success';
-    case 'moderate':
-      return 'default';
-    case 'busy':
-      return 'warning';
-    case 'very_busy':
-    case 'over_capacity':
-      return 'critical';
-    default:
-      return 'default';
-  }
-}
-
-// ==========================================
-// CONNECTIVITY CALCULATIONS
-// ==========================================
+// ============================================================================
+// Connectivity Calculations
+// ============================================================================
 
 /**
- * Derives connectivity quality from signal score (0–100):
- * 80–100: Excellent
- * 60–79: Good
- * 40–59: Fair
- * 20–39: Weak
- * 0–19: Very Weak
+ * Derives ConnectivityQuality from a signal score (0–100).
+ *
+ * Threshold rules:
+ * 80–100 -> excellent
+ * 60–79  -> good
+ * 40–59  -> fair
+ * 20–39  -> weak
+ * 0–19   -> very_weak
  */
-export function calculateConnectivityQuality(
+export function deriveConnectivityQuality(
   signalScore: number
 ): ConnectivityQuality {
-  const score = Math.max(0, Math.min(100, Number.isFinite(signalScore) ? signalScore : 0));
-  if (score >= CONNECTIVITY_THRESHOLDS.EXCELLENT_MIN) {
-    return 'excellent';
+  if (typeof signalScore !== "number" || isNaN(signalScore)) {
+    return "very_weak";
   }
-  if (score >= CONNECTIVITY_THRESHOLDS.GOOD_MIN) {
-    return 'good';
+
+  const clampedScore = Math.max(0, Math.min(100, Math.round(signalScore)));
+
+  if (clampedScore >= CONNECTIVITY_THRESHOLDS.EXCELLENT_MIN) {
+    return "excellent";
   }
-  if (score >= CONNECTIVITY_THRESHOLDS.FAIR_MIN) {
-    return 'fair';
+  if (clampedScore >= 60) {
+    return "good";
   }
-  if (score >= CONNECTIVITY_THRESHOLDS.WEAK_MIN) {
-    return 'weak';
+  if (clampedScore >= 40) {
+    return "fair";
   }
-  return 'very_weak';
+  if (clampedScore >= 20) {
+    return "weak";
+  }
+  return "very_weak";
 }
 
-export function formatConnectivityQuality(quality: ConnectivityQuality): string {
-  switch (quality) {
-    case 'excellent':
-      return 'Excellent';
-    case 'good':
-      return 'Good';
-    case 'fair':
-      return 'Fair';
-    case 'weak':
-      return 'Weak';
-    case 'very_weak':
-      return 'Very Weak';
-    default:
-      return 'Unknown';
-  }
-}
-
-export function getConnectivityQualityVariant(
-  quality: ConnectivityQuality
-): 'success' | 'warning' | 'critical' | 'default' {
-  switch (quality) {
-    case 'excellent':
-    case 'good':
-      return 'success';
-    case 'fair':
-      return 'warning';
-    case 'weak':
-    case 'very_weak':
-      return 'critical';
-    default:
-      return 'default';
-  }
-}
-
-// ==========================================
-// FRESHNESS CALCULATIONS
-// ==========================================
+// ============================================================================
+// Freshness Calculations
+// ============================================================================
 
 /**
- * Determines whether a timestamp is fresh, stale, or unavailable.
+ * Evaluates whether a measurement timestamp is fresh, stale, or unavailable.
  */
-export function calculateFreshness(
-  measuredAt: string | Date | undefined | null,
-  referenceTime: Date = new Date(),
-  customThresholds: { freshMaxMs?: number; staleMaxMs?: number } = {}
+export function deriveFreshness(
+  measuredAt: string | Date | number | null | undefined,
+  nowTime: number = Date.now(),
+  thresholds: { freshMaxMs?: number; staleMaxMs?: number } = {}
 ): Freshness {
   if (!measuredAt) {
-    return 'unavailable';
+    return "unavailable";
   }
 
-  const date = typeof measuredAt === 'string' ? new Date(measuredAt) : measuredAt;
-  const timeMs = date.getTime();
+  const timestamp =
+    typeof measuredAt === "number"
+      ? measuredAt
+      : new Date(measuredAt).getTime();
 
-  if (Number.isNaN(timeMs)) {
-    return 'unavailable';
+  if (isNaN(timestamp) || timestamp <= 0) {
+    return "unavailable";
   }
 
-  const diffMs = referenceTime.getTime() - timeMs;
-  if (diffMs < 0) {
-    // Clock slight skew or future timestamp - treat as fresh
-    return 'fresh';
-  }
+  const freshMax = thresholds.freshMaxMs ?? FRESHNESS_THRESHOLDS_MS.FRESH_MAX_MS;
+  const staleMax = thresholds.staleMaxMs ?? FRESHNESS_THRESHOLDS_MS.STALE_MAX_MS;
 
-  const freshMax = customThresholds.freshMaxMs ?? FRESHNESS_THRESHOLDS.FRESH_MAX_MS;
-  const staleMax = customThresholds.staleMaxMs ?? FRESHNESS_THRESHOLDS.STALE_MAX_MS;
+  const ageMs = Math.max(0, nowTime - timestamp);
 
-  if (diffMs <= freshMax) {
-    return 'fresh';
+  if (ageMs <= freshMax) {
+    return "fresh";
   }
-  if (diffMs <= staleMax) {
-    return 'stale';
+  if (ageMs <= staleMax) {
+    return "stale";
   }
-  return 'unavailable';
+  return "unavailable";
 }
 
 /**
- * Formats relative time string such as "Updated 12 sec ago", "Updated 2 min ago".
+ * Formats a timestamp into human-readable relative freshness.
+ * e.g., "Just now", "Updated 12s ago", "Updated 2m ago", "Updated 1h ago".
  */
-export function formatRelativeTime(
-  measuredAt: string | Date | undefined | null,
-  referenceTime: Date = new Date()
+export function formatRelativeFreshness(
+  measuredAt: string | Date | number | null | undefined,
+  nowTime: number = Date.now()
 ): string {
   if (!measuredAt) {
-    return 'Timestamp unavailable';
+    return "Unavailable";
   }
 
-  const date = typeof measuredAt === 'string' ? new Date(measuredAt) : measuredAt;
-  const timeMs = date.getTime();
+  const timestamp =
+    typeof measuredAt === "number"
+      ? measuredAt
+      : new Date(measuredAt).getTime();
 
-  if (Number.isNaN(timeMs)) {
-    return 'Timestamp unavailable';
+  if (isNaN(timestamp) || timestamp <= 0) {
+    return "Unavailable";
   }
 
-  const diffSeconds = Math.max(0, Math.floor((referenceTime.getTime() - timeMs) / 1000));
+  const diffSeconds = Math.floor(Math.max(0, nowTime - timestamp) / 1000);
 
-  if (diffSeconds < 10) {
-    return 'Updated just now';
+  if (diffSeconds < 5) {
+    return "Just now";
   }
   if (diffSeconds < 60) {
-    return `Updated ${diffSeconds} sec ago`;
+    return `Updated ${diffSeconds}s ago`;
   }
+
   const diffMinutes = Math.floor(diffSeconds / 60);
   if (diffMinutes < 60) {
-    return `Updated ${diffMinutes} min ago`;
+    return `Updated ${diffMinutes}m ago`;
   }
+
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return `Updated ${diffHours} hr ago`;
+    return `Updated ${diffHours}h ago`;
   }
+
   const diffDays = Math.floor(diffHours / 24);
-  return `Updated ${diffDays} d ago`;
+  return `Updated ${diffDays}d ago`;
 }
 
-// ==========================================
-// CAMPUS OVERVIEW METRICS
-// ==========================================
+// ============================================================================
+// Campus Overview Metrics Calculations
+// ============================================================================
 
 /**
- * Computes consolidated campus overview metrics derived strictly from current location snapshots.
+ * Computes live campus overview metrics derived strictly from location datasets.
  */
 export function calculateCampusOverview(
-  locations: CampusLocation[],
-  occupancy: OccupancySnapshot[],
-  connectivity: ConnectivitySnapshot[]
+  occupancyList: OccupancySnapshot[] = [],
+  connectivityList: ConnectivitySnapshot[] = []
 ): CampusOverviewMetrics {
-  const totalStudentsTracked = occupancy.reduce((acc, curr) => {
-    return acc + (Number.isFinite(curr.currentCount) ? Math.max(0, curr.currentCount) : 0);
-  }, 0);
+  let totalStudents = 0;
+  let totalCapacity = 0;
+  let busyCount = 0;
+  let lowConnectivityCount = 0;
+  let sumOccupancyPercentages = 0;
+  let sumSignalScores = 0;
 
-  const totalMonitoredCapacity = locations.reduce((acc, curr) => {
-    return acc + (Number.isFinite(curr.capacity) ? Math.max(0, curr.capacity) : 0);
-  }, 0);
+  const uniqueLocationIds = new Set<string>();
 
-  const overallOccupancyPercentage =
-    totalMonitoredCapacity > 0
-      ? Math.round((totalStudentsTracked / totalMonitoredCapacity) * 100)
+  // Process occupancy list
+  for (const item of occupancyList) {
+    if (item && typeof item.currentCount === "number") {
+      totalStudents += Math.max(0, item.currentCount);
+      totalCapacity += Math.max(0, item.capacity || 0);
+      sumOccupancyPercentages += item.percentage || 0;
+      uniqueLocationIds.add(item.id);
+
+      if (
+        item.status === "busy" ||
+        item.status === "very_busy" ||
+        item.status === "over_capacity" ||
+        item.percentage >= 75
+      ) {
+        busyCount++;
+      }
+    }
+  }
+
+  // Process connectivity list
+  for (const item of connectivityList) {
+    if (item && typeof item.signalScore === "number") {
+      sumSignalScores += item.signalScore;
+      uniqueLocationIds.add(item.id);
+
+      if (
+        item.quality === "weak" ||
+        item.quality === "very_weak" ||
+        item.signalScore < 40
+      ) {
+        lowConnectivityCount++;
+      }
+    }
+  }
+
+  const avgOccupancy =
+    occupancyList.length > 0
+      ? Math.round((sumOccupancyPercentages / occupancyList.length) * 10) / 10
       : 0;
 
-  const busyLocationsCount = occupancy.filter((snap) => {
-    return snap.status === 'busy' || snap.status === 'very_busy' || snap.status === 'over_capacity';
-  }).length;
-
-  const lowConnectivityCount = connectivity.filter((snap) => {
-    return snap.quality === 'weak' || snap.quality === 'very_weak';
-  }).length;
-
-  const monitoredLocationIds = new Set<string>();
-  locations.forEach((loc) => monitoredLocationIds.add(loc.id));
-  occupancy.forEach((occ) => monitoredLocationIds.add(occ.locationId));
-  connectivity.forEach((conn) => monitoredLocationIds.add(conn.locationId));
-
-  const averageSignalScore =
-    connectivity.length > 0
-      ? Math.round(
-          connectivity.reduce((acc, curr) => acc + (Number.isFinite(curr.signalScore) ? curr.signalScore : 0), 0) /
-            connectivity.length
-        )
+  const avgSignal =
+    connectivityList.length > 0
+      ? Math.round((sumSignalScores / connectivityList.length) * 10) / 10
       : 0;
 
   return {
-    totalStudentsTracked,
-    totalMonitoredCapacity,
-    overallOccupancyPercentage,
-    busyLocationsCount,
-    lowConnectivityCount,
-    locationsMonitored: monitoredLocationIds.size,
-    averageSignalScore,
+    totalStudentsTracked: totalStudents,
+    totalCapacityTracked: totalCapacity,
+    busyLocationsCount: busyCount,
+    lowConnectivityCount: lowConnectivityCount,
+    locationsMonitored: uniqueLocationIds.size,
+    averageOccupancyPercentage: avgOccupancy,
+    averageSignalScore: avgSignal,
   };
 }
 
-// ==========================================
-// LOCATION RANKINGS
-// ==========================================
+// ============================================================================
+// Location Rankings Calculations
+// ============================================================================
 
 /**
- * Ranks locations by highest crowd pressure (occupancy percentage descending).
+ * Ranks locations by highest occupancy percentage (Most Crowded).
  */
-export function getMostCrowdedLocations(
-  occupancy: OccupancySnapshot[],
-  limit = 5
-): LocationRankingItem[] {
-  const sorted = [...occupancy]
-    .filter((o) => Number.isFinite(o.percentage))
-    .sort((a, b) => {
-      if (b.percentage !== a.percentage) {
-        return b.percentage - a.percentage;
-      }
-      return b.currentCount - a.currentCount;
-    });
+export function rankMostCrowded(
+  occupancyList: OccupancySnapshot[] = [],
+  limit?: number
+): RankedOccupancy[] {
+  const sorted = [...occupancyList].sort((a, b) => {
+    if (b.percentage !== a.percentage) {
+      return b.percentage - a.percentage;
+    }
+    return b.currentCount - a.currentCount;
+  });
 
-  return sorted.slice(0, limit).map((item, idx) => ({
-    rank: idx + 1,
-    locationId: item.locationId,
-    locationName: item.locationName,
-    metricValue: item.percentage,
-    formattedValue: `${item.percentage}% full`,
-    statusLabel: formatOccupancyStatus(item.status),
-    statusVariant: getOccupancyStatusVariant(item.status),
-    secondaryInfo: `${item.currentCount} / ${item.capacity} students`,
+  const sliced = typeof limit === "number" && limit > 0 ? sorted.slice(0, limit) : sorted;
+
+  return sliced.map((snapshot, index) => ({
+    rank: index + 1,
+    snapshot,
   }));
 }
 
 /**
- * Ranks locations by weakest connectivity (signal score ascending).
+ * Ranks locations by lowest signal score (Weakest Connectivity).
  */
-export function getWeakestConnectivityLocations(
-  connectivity: ConnectivitySnapshot[],
-  limit = 5
-): LocationRankingItem[] {
-  const sorted = [...connectivity]
-    .filter((c) => Number.isFinite(c.signalScore))
-    .sort((a, b) => a.signalScore - b.signalScore);
+export function rankWeakestConnectivity(
+  connectivityList: ConnectivitySnapshot[] = [],
+  limit?: number
+): RankedConnectivity[] {
+  const sorted = [...connectivityList].sort((a, b) => {
+    if (a.signalScore !== b.signalScore) {
+      return a.signalScore - b.signalScore;
+    }
+    return (a.signalDbm ?? 0) - (b.signalDbm ?? 0);
+  });
 
-  return sorted.slice(0, limit).map((item, idx) => ({
-    rank: idx + 1,
-    locationId: item.locationId,
-    locationName: item.locationName,
-    metricValue: item.signalScore,
-    formattedValue: `${item.signalScore} / 100`,
-    statusLabel: formatConnectivityQuality(item.quality),
-    statusVariant: getConnectivityQualityVariant(item.quality),
-    secondaryInfo: item.signalDbm ? `${item.signalDbm} dBm` : item.networkName ?? 'WLAN',
+  const sliced = typeof limit === "number" && limit > 0 ? sorted.slice(0, limit) : sorted;
+
+  return sliced.map((snapshot, index) => ({
+    rank: index + 1,
+    snapshot,
   }));
+}
+
+// ============================================================================
+// Composite Location Condition Builder
+// ============================================================================
+
+/**
+ * Combines occupancy and connectivity snapshots into a cohesive location condition model.
+ */
+export function buildLocationConditions(
+  occupancyList: OccupancySnapshot[] = [],
+  connectivityList: ConnectivitySnapshot[] = []
+): LocationCondition[] {
+  const map = new Map<string, Partial<LocationCondition>>();
+
+  for (const occ of occupancyList) {
+    map.set(occ.id, {
+      id: occ.id,
+      name: occ.name,
+      zone: occ.zone || "Main Campus",
+      occupancy: occ,
+      dataMode: occ.dataMode,
+      lastUpdated: occ.measuredAt,
+    });
+  }
+
+  for (const conn of connectivityList) {
+    const existing = map.get(conn.id) || {
+      id: conn.id,
+      name: conn.name,
+      zone: conn.zone || "Main Campus",
+      dataMode: conn.dataMode,
+      lastUpdated: conn.measuredAt,
+    };
+
+    existing.connectivity = conn;
+    if (!existing.lastUpdated || new Date(conn.measuredAt) > new Date(existing.lastUpdated)) {
+      existing.lastUpdated = conn.measuredAt;
+    }
+    map.set(conn.id, existing);
+  }
+
+  return Array.from(map.values()).map((item) => {
+    let overallStatus: "normal" | "warning" | "critical" = "normal";
+
+    const isCrowded =
+      item.occupancy?.status === "very_busy" ||
+      item.occupancy?.status === "over_capacity";
+    const isWeakSignal =
+      item.connectivity?.quality === "weak" ||
+      item.connectivity?.quality === "very_weak";
+
+    if (item.occupancy?.status === "over_capacity" || item.connectivity?.quality === "very_weak") {
+      overallStatus = "critical";
+    } else if (isCrowded || isWeakSignal || item.occupancy?.status === "busy") {
+      overallStatus = "warning";
+    }
+
+    return {
+      id: item.id || "unknown",
+      name: item.name || "Unknown Location",
+      zone: item.zone || "General",
+      occupancy: item.occupancy,
+      connectivity: item.connectivity,
+      dataMode: item.dataMode || "simulated",
+      overallStatus,
+      lastUpdated: item.lastUpdated || new Date().toISOString(),
+    };
+  });
 }

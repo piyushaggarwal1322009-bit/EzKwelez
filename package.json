@@ -16,7 +16,9 @@
     "build": "npm run build:shared && npm run build:web",
     "typecheck": "npm run typecheck:shared && npm run typecheck:web",
     "dev:api": "uvicorn app.main:app --app-dir apps/api --reload --host 0.0.0.0 --port 8000",
-    "test:backend": "pytest tests/backend"
+    "test:shared": "node tests/shared/contracts.test.mjs",
+    "test:backend": "python -m pytest tests/backend",
+    "test": "npm run test:shared && npm run test:backend"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

@@ -1,429 +1,390 @@
 /**
- * LiveCampusConditions Main Feature Component
- * Clean, high-density campus operations command center view.
- * Handles loading, error, empty, stale, and nominal states.
- * Owner: Tanisha
+ * Live Campus Conditions Master Component
+ * Feature Owner: Tanisha
+ * Module: @/features/tanisha/live-campus
+ *
+ * Self-contained, reusable operational conditions module.
+ * Designed to be embedded into the operator command center or recovery analysis views.
  */
 
-import * as React from 'react';
-import { useLiveCampusConditions, SimulationMode } from '../hooks/useLiveCampusConditions';
-import { CampusOverview } from './CampusOverview';
-import { OccupancyCard } from './OccupancyCard';
-import { ConnectivityCard } from './ConnectivityCard';
-import { LocationRanking } from './LocationRanking';
-import { DataStatusBadge } from './DataStatusBadge';
-import { FreshnessIndicator } from './FreshnessIndicator';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import * as React from "react";
 import {
   Activity,
+  RefreshCw,
+  Search,
+  Filter,
+  AlertOctagon,
   Layers,
   Users,
   Wifi,
+  BarChart3,
+  CheckCircle2,
   AlertTriangle,
   RotateCcw,
-  Sliders,
-  CheckCircle2,
-  Clock,
-  ShieldAlert,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { useLiveCampusConditions } from "../hooks/useLiveCampusConditions";
+import { DataStatusBadge } from "./DataStatusBadge";
+import { FreshnessIndicator } from "./FreshnessIndicator";
+import { CampusOverview } from "./CampusOverview";
+import { OccupancyCard } from "./OccupancyCard";
+import { ConnectivityCard } from "./ConnectivityCard";
+import { LocationRanking } from "./LocationRanking";
+import { SimulationScenario } from "../lib/mock-data";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export interface LiveCampusConditionsProps {
   className?: string;
-  autoRefreshIntervalMs?: number;
-  initialSimulationMode?: SimulationMode;
-  showSimulationControls?: boolean;
+  initialScenario?: SimulationScenario;
+  showScenarioSelector?: boolean;
+  enablePolling?: boolean;
 }
 
 export function LiveCampusConditions({
   className,
-  autoRefreshIntervalMs = 0,
-  initialSimulationMode = 'normal',
-  showSimulationControls = true,
+  initialScenario = "normal",
+  showScenarioSelector = true,
+  enablePolling = false,
 }: LiveCampusConditionsProps) {
   const {
     data,
-    isLoading,
-    error,
-    metrics,
-    combinedConditions,
+    overview,
     mostCrowded,
     weakestConnectivity,
+    isLoading,
+    isRefreshing,
+    isError,
+    errorMessage,
+    isStale,
+    isSimulated,
+    scenario,
+    setScenario,
+    refetch,
     freshness,
-    formattedLastUpdated,
-    simulationMode,
-    setSimulationMode,
-    refresh,
   } = useLiveCampusConditions({
-    autoRefreshIntervalMs,
-    initialMode: initialSimulationMode,
+    initialScenario,
+    enablePolling,
   });
 
-  const [activeTab, setActiveTab] = React.useState<'all' | 'occupancy' | 'connectivity'>('all');
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  // Local filter states
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
+  const [selectedZone, setSelectedZone] = React.useState<string>("all");
+  const [viewMode, setViewMode] = React.useState<"all" | "occupancy" | "connectivity" | "rankings">("all");
 
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    await refresh();
-    setIsRefreshing(false);
+  // Extract unique zones for filtering
+  const availableZones = React.useMemo(() => {
+    if (!data) return [];
+    const zones = new Set<string>();
+    data.occupancy.forEach((o) => o.zone && zones.add(o.zone));
+    data.connectivity.forEach((c) => c.zone && zones.add(c.zone));
+    return Array.from(zones);
+  }, [data]);
+
+  // Filtered lists
+  const filteredOccupancy = React.useMemo(() => {
+    if (!data?.occupancy) return [];
+    return data.occupancy.filter((item) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.zone && item.zone.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesZone = selectedZone === "all" || item.zone === selectedZone;
+      return matchesSearch && matchesZone;
+    });
+  }, [data?.occupancy, searchQuery, selectedZone]);
+
+  const filteredConnectivity = React.useMemo(() => {
+    if (!data?.connectivity) return [];
+    return data.connectivity.filter((item) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.networkName && item.networkName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.zone && item.zone.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesZone = selectedZone === "all" || item.zone === selectedZone;
+      return matchesSearch && matchesZone;
+    });
+  }, [data?.connectivity, searchQuery, selectedZone]);
+
+  const hasActiveFilters = searchQuery !== "" || selectedZone !== "all";
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setSelectedZone("all");
   };
 
   return (
-    <div className={cn('space-y-6 w-full text-slate-100', className)}>
-      {/* ========================================================= */}
-      {/* HEADER & OPERATIONAL CONTROLS                             */}
-      {/* ========================================================= */}
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-800">
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5 mb-1">
-            <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <Activity className="w-6 h-6 text-blue-500" aria-hidden="true" />
+    <div
+      role="region"
+      aria-label="Live Campus Conditions Module"
+      className={cn("space-y-6 max-w-7xl mx-auto", className)}
+    >
+      {/* Module Header */}
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-blue-950/80 border border-blue-800/60 text-blue-400">
+              <Activity className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               Live Campus Conditions
             </h2>
-            {data && <DataStatusBadge dataMode={data.dataMode} />}
+            <DataStatusBadge mode={data?.dataMode || "simulated"} />
           </div>
-          <p className="text-xs text-slate-400">
-            Real-time occupancy density and AP wireless telemetry across campus operational zones.
+          <p className="text-xs sm:text-sm text-slate-400">
+            Real-time telemetry of student density, room occupancy, and network signal distribution.
           </p>
         </div>
 
+        {/* Controls: Freshness, Scenario Switcher, Refresh Button */}
         <div className="flex flex-wrap items-center gap-3">
-          <FreshnessIndicator
-            freshness={freshness}
-            formattedTime={formattedLastUpdated}
-            onRefresh={handleManualRefresh}
-            isRefreshing={isRefreshing || isLoading}
-          />
+          <FreshnessIndicator measuredAt={data?.generatedAt} status={freshness} />
 
-          {showSimulationControls && (
-            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-              <Sliders className="w-3.5 h-3.5 text-slate-500 ml-1.5" aria-hidden="true" />
-              <label htmlFor="simulation-mode-select" className="sr-only">
-                Telemetry State Simulator
-              </label>
+          {showScenarioSelector && (
+            <div className="flex items-center gap-1.5 bg-slate-950/80 border border-slate-800 rounded-lg p-1 text-xs">
+              <span className="text-[10px] font-mono uppercase text-slate-400 px-2 font-medium">
+                Scenario:
+              </span>
               <select
-                id="simulation-mode-select"
-                value={simulationMode}
-                onChange={(e) => setSimulationMode(e.target.value as SimulationMode)}
-                className="bg-transparent text-slate-300 text-xs font-mono py-1 px-2 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                aria-label="Simulation state mode selector"
+                aria-label="Select simulation scenario"
+                value={scenario}
+                onChange={(e) => setScenario(e.target.value as SimulationScenario)}
+                className="bg-slate-900 text-slate-200 border border-slate-700/80 rounded px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
               >
-                <option value="normal" className="bg-slate-900 text-slate-200">
-                  Mode: Nominal Simulated
-                </option>
-                <option value="stale" className="bg-slate-900 text-slate-200">
-                  Mode: Stale Telemetry
-                </option>
-                <option value="error" className="bg-slate-900 text-slate-200">
-                  Mode: API Failure (503)
-                </option>
-                <option value="empty" className="bg-slate-900 text-slate-200">
-                  Mode: Empty Telemetry
-                </option>
+                <option value="normal">Normal Operations</option>
+                <option value="peak_rush">Peak Class Rush</option>
+                <option value="outage_scenario">Building B Outage (Simulation)</option>
               </select>
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={refetch}
+            disabled={isRefreshing || isLoading}
+            aria-label="Refresh telemetry snapshot"
+            title="Refresh telemetry snapshot"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold transition-colors disabled:opacity-50"
+          >
+            <RefreshCw
+              className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin text-blue-400")}
+              aria-hidden="true"
+            />
+            <span>{isRefreshing ? "Updating..." : "Refresh"}</span>
+          </button>
         </div>
       </header>
 
-      {/* ========================================================= */}
-      {/* STALE TELEMETRY BANNER                                    */}
-      {/* ========================================================= */}
-      {freshness === 'stale' && !isLoading && !error && (
+      {/* Stale Warning Banner */}
+      {isStale && (
         <div
           role="alert"
-          className="flex items-center justify-between p-3.5 rounded-lg border border-amber-800/60 bg-amber-950/40 text-amber-300 text-xs shadow-sm"
+          className="flex items-center gap-3 p-3.5 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-300 text-xs"
         >
-          <div className="flex items-center gap-2.5">
-            <Clock className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
-            <div>
-              <strong className="font-semibold uppercase tracking-wider text-[11px]">
-                Telemetry Stream Stale:
-              </strong>{' '}
-              <span>
-                Campus sensors have not pushed updates within nominal window ({formattedLastUpdated}).
-              </span>
-            </div>
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+          <div className="flex-1">
+            <strong>Stale Telemetry Notice:</strong> Sensor snapshots are older than 1 minute. Conditions may not reflect immediate campus movements.
           </div>
           <button
             type="button"
-            onClick={handleManualRefresh}
-            className="px-2.5 py-1 rounded bg-amber-900/60 hover:bg-amber-800/80 text-amber-200 text-xs font-medium transition-colors"
+            onClick={refetch}
+            className="px-2.5 py-1 rounded bg-amber-900/60 hover:bg-amber-800/80 text-amber-200 font-semibold border border-amber-700/50 text-[11px] transition-colors shrink-0"
           >
-            Poll Sensors
+            Refetch Telemetry
           </button>
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* ERROR STATE                                               */}
-      {/* ========================================================= */}
-      {error && !isLoading && (
-        <Card className="bg-rose-950/20 border-rose-900/60 p-6 text-center" role="alert">
-          <CardHeader className="items-center pb-2">
-            <div className="w-12 h-12 rounded-full bg-rose-950/80 border border-rose-800/80 flex items-center justify-center text-rose-400 mb-2">
-              <ShieldAlert className="w-6 h-6" aria-hidden="true" />
+      {/* Error State */}
+      {isError && (
+        <Card className="bg-rose-950/30 border-rose-800/70 p-6 text-center space-y-3">
+          <div className="flex justify-center">
+            <div className="p-3 rounded-full bg-rose-950/80 border border-rose-700 text-rose-400">
+              <AlertOctagon className="h-8 w-8" aria-hidden="true" />
             </div>
-            <CardTitle className="text-rose-200 text-lg">Telemetry Stream Unavailable</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 max-w-md mx-auto">
-            <p className="text-xs text-rose-300 font-mono bg-rose-950/60 p-2.5 rounded border border-rose-900/40">
-              {error}
-            </p>
-            <p className="text-xs text-slate-400">
-              The live campus telemetry feed could not be reached. You can retry retrieval or switch to nominal simulated mode.
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSimulationMode('normal')}
-                className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center gap-1.5"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
-                Reset to Nominal
-              </button>
-              <button
-                type="button"
-                onClick={handleManualRefresh}
-                className="px-3.5 py-1.5 rounded-lg bg-rose-900 hover:bg-rose-800 text-rose-100 text-xs font-semibold transition-colors flex items-center gap-1.5"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Retry Feed
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ========================================================= */}
-      {/* LOADING STATE                                             */}
-      {/* ========================================================= */}
-      {isLoading && (
-        <div className="space-y-6" aria-busy="true" aria-label="Loading campus conditions">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-28 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse p-4" />
-            ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="h-64 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse" />
-            <div className="h-64 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-44 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse" />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* EMPTY DATA STATE                                          */}
-      {/* ========================================================= */}
-      {!isLoading && !error && combinedConditions.length === 0 && (
-        <Card className="bg-slate-900/60 border-slate-800 p-8 text-center">
-          <CardContent className="space-y-3 max-w-sm mx-auto">
-            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
-              <AlertTriangle className="w-5 h-5" aria-hidden="true" />
-            </div>
-            <h3 className="text-base font-semibold text-white">No Monitored Locations</h3>
-            <p className="text-xs text-slate-400">
-              No campus location condition records were returned by the active telemetry stream.
-            </p>
+          <h3 className="text-lg font-bold text-white">Telemetry Service Offline</h3>
+          <p className="text-xs text-rose-300 max-w-md mx-auto">
+            {errorMessage || "Unable to retrieve live campus telemetry. Check backend connection or switch to simulated mode."}
+          </p>
+          <div className="pt-2">
             <button
               type="button"
-              onClick={() => setSimulationMode('normal')}
-              className="mt-2 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors"
+              onClick={refetch}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-900 hover:bg-rose-800 text-white text-xs font-semibold transition-colors"
             >
-              Load Sample Data
+              <RotateCcw className="h-3.5 w-3.5" />
+              Retry Connection
             </button>
-          </CardContent>
+          </div>
         </Card>
       )}
 
-      {/* ========================================================= */}
-      {/* NOMINAL DATA CONTENT                                      */}
-      {/* ========================================================= */}
-      {!isLoading && !error && combinedConditions.length > 0 && (
-        <>
-          {/* 1. CAMPUS OVERVIEW METRICS */}
-          {metrics && <CampusOverview metrics={metrics} />}
+      {/* Overview Metrics Cards */}
+      <CampusOverview metrics={overview} isLoading={isLoading} />
 
-          {/* 2. DUAL OPERATIONAL RANKINGS */}
+      {/* Navigation Tabs & Search / Filter Controls */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-2">
+        {/* View Mode Tabs */}
+        <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-800 p-1 rounded-xl text-xs font-semibold overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setViewMode("all")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap",
+              viewMode === "all" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>All Views</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("occupancy")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap",
+              viewMode === "occupancy" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            <Users className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Occupancy ({filteredOccupancy.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("connectivity")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap",
+              viewMode === "connectivity" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            <Wifi className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Connectivity ({filteredConnectivity.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("rankings")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap",
+              viewMode === "rankings" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Rankings</span>
+          </button>
+        </div>
+
+        {/* Search and Zone Filter */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Search locations by name or zone"
+              placeholder="Search location or zone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          {availableZones.length > 0 && (
+            <div className="relative">
+              <select
+                aria-label="Filter by campus zone"
+                value={selectedZone}
+                onChange={(e) => setSelectedZone(e.target.value)}
+                className="bg-slate-900 text-slate-300 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+              >
+                <option value="all">All Zones</option>
+                {availableZones.map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Empty State when filters return no results */}
+      {hasActiveFilters && filteredOccupancy.length === 0 && filteredConnectivity.length === 0 && (
+        <Card className="bg-slate-900/60 border-slate-800 p-8 text-center space-y-3">
+          <Search className="h-8 w-8 text-slate-500 mx-auto" aria-hidden="true" />
+          <h4 className="text-base font-semibold text-white">No Matching Locations</h4>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            No campus locations matched your query &quot;{searchQuery}&quot; in zone &quot;{selectedZone}&quot;.
+          </p>
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Clear Search & Filters
+          </button>
+        </Card>
+      )}
+
+      {/* Main Content Area based on View Mode */}
+
+      {/* Rankings View or Embedded in All */}
+      {(viewMode === "all" || viewMode === "rankings") && (
+        <section aria-label="Campus Rankings Section" className="pt-2">
           <LocationRanking
             mostCrowded={mostCrowded}
             weakestConnectivity={weakestConnectivity}
           />
+        </section>
+      )}
 
-          {/* 3. VIEW MODE NAVIGATION TABS */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-900 border border-slate-800 self-start">
-              <button
-                type="button"
-                onClick={() => setActiveTab('all')}
-                className={cn(
-                  'px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-                  activeTab === 'all'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                )}
-                aria-pressed={activeTab === 'all'}
-              >
-                <Layers className="w-3.5 h-3.5" aria-hidden="true" />
-                All Conditions ({combinedConditions.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('occupancy')}
-                className={cn(
-                  'px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-                  activeTab === 'occupancy'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                )}
-                aria-pressed={activeTab === 'occupancy'}
-              >
-                <Users className="w-3.5 h-3.5" aria-hidden="true" />
-                Occupancy Grid
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('connectivity')}
-                className={cn(
-                  'px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-                  activeTab === 'connectivity'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                )}
-                aria-pressed={activeTab === 'connectivity'}
-              >
-                <Wifi className="w-3.5 h-3.5" aria-hidden="true" />
-                Connectivity Grid
-              </button>
+      {/* Occupancy Grid */}
+      {(viewMode === "all" || viewMode === "occupancy") && filteredOccupancy.length > 0 && (
+        <section aria-label="Occupancy Telemetry Section" className="space-y-3 pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-blue-400" aria-hidden="true" />
+              <h3 className="text-base font-bold text-white tracking-tight">
+                Student Occupancy by Location
+              </h3>
             </div>
-
-            <div className="text-xs text-slate-400 font-mono">
-              Displaying {combinedConditions.length} active zones
-            </div>
+            <span className="text-xs font-mono text-slate-400">
+              {filteredOccupancy.length} locations monitored
+            </span>
           </div>
 
-          {/* 4. DETAIL CARDS PRESENTATION */}
-          {activeTab === 'occupancy' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {combinedConditions
-                .filter((item) => item.occupancy !== undefined)
-                .map((item) => (
-                  <OccupancyCard
-                    key={item.location.id}
-                    occupancy={item.occupancy!}
-                    locationDetails={item.location}
-                  />
-                ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredOccupancy.map((occ) => (
+              <OccupancyCard key={occ.id} snapshot={occ} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Connectivity Grid */}
+      {(viewMode === "all" || viewMode === "connectivity") && filteredConnectivity.length > 0 && (
+        <section aria-label="Connectivity Telemetry Section" className="space-y-3 pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wifi className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+              <h3 className="text-base font-bold text-white tracking-tight">
+                Campus Signal Strength & Network Quality
+              </h3>
             </div>
-          )}
+            <span className="text-xs font-mono text-slate-400">
+              {filteredConnectivity.length} access zones
+            </span>
+          </div>
 
-          {activeTab === 'connectivity' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {combinedConditions
-                .filter((item) => item.connectivity !== undefined)
-                .map((item) => (
-                  <ConnectivityCard
-                    key={item.location.id}
-                    connectivity={item.connectivity!}
-                    locationDetails={item.location}
-                  />
-                ))}
-            </div>
-          )}
-
-          {activeTab === 'all' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {combinedConditions.map((item) => (
-                <div
-                  key={item.location.id}
-                  className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-4 shadow-sm"
-                >
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-                    <div>
-                      <h4 className="font-semibold text-white text-sm">
-                        {item.location.name}
-                      </h4>
-                      <p className="text-xs text-slate-400">
-                        {item.location.zone || 'Campus Zone'} • Capacity: {item.location.capacity}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-                      {item.location.category}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {item.occupancy ? (
-                      <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-400 flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5 text-blue-400" />
-                            Occupancy
-                          </span>
-                          <span className="font-mono font-bold text-white">
-                            {item.occupancy.percentage}%
-                          </span>
-                        </div>
-                        <div className="text-xs font-mono text-slate-300">
-                          {item.occupancy.currentCount} / {item.occupancy.capacity} students
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className={cn(
-                              'h-full rounded-full',
-                              item.occupancy.percentage >= 90
-                                ? 'bg-rose-500'
-                                : item.occupancy.percentage >= 75
-                                ? 'bg-amber-500'
-                                : 'bg-emerald-500'
-                            )}
-                            style={{ width: `${Math.min(100, item.occupancy.percentage)}%` }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-800 text-xs text-slate-400 flex items-center justify-center">
-                        No occupancy sensor
-                      </div>
-                    )}
-
-                    {item.connectivity ? (
-                      <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-400 flex items-center gap-1.5">
-                            <Wifi className="w-3.5 h-3.5 text-cyan-400" />
-                            Wi-Fi Signal
-                          </span>
-                          <span className="font-mono font-bold text-white">
-                            {item.connectivity.signalScore}/100
-                          </span>
-                        </div>
-                        <div className="text-xs font-mono text-slate-300 truncate">
-                          {item.connectivity.networkName || 'WLAN'}
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] text-slate-400">
-                          <span>Quality:</span>
-                          <span className="capitalize font-semibold text-slate-200">
-                            {item.connectivity.quality.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-800 text-xs text-slate-400 flex items-center justify-center">
-                        No AP telemetry
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredConnectivity.map((conn) => (
+              <ConnectivityCard key={conn.id} snapshot={conn} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

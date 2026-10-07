@@ -1,105 +1,103 @@
 /**
- * Types for Live Campus Conditions Feature
- * Owner: Tanisha
+ * Live Campus Conditions - Data Types & Contracts
+ * Feature Owner: Tanisha
+ * Module: @/features/tanisha/live-campus
  */
 
-export type DataMode = 'live' | 'simulated' | 'estimated' | 'unknown';
+export type DataMode = "live" | "simulated" | "estimated" | "unknown";
 
 export type OccupancyStatus =
-  | 'low'
-  | 'moderate'
-  | 'busy'
-  | 'very_busy'
-  | 'over_capacity';
+  | "low"
+  | "moderate"
+  | "busy"
+  | "very_busy"
+  | "over_capacity";
 
 export type ConnectivityQuality =
-  | 'excellent'
-  | 'good'
-  | 'fair'
-  | 'weak'
-  | 'very_weak';
+  | "excellent"
+  | "good"
+  | "fair"
+  | "weak"
+  | "very_weak";
 
-export type Freshness = 'fresh' | 'stale' | 'unavailable';
-
-export type LocationCategory =
-  | 'library'
-  | 'dining'
-  | 'academic'
-  | 'laboratory'
-  | 'recreation'
-  | 'residential'
-  | 'transit'
-  | 'general';
+export type Freshness = "fresh" | "stale" | "unavailable";
 
 export interface CampusLocation {
   id: string;
   name: string;
-  category: LocationCategory;
-  capacity: number;
-  buildingId?: string;
-  zone?: string;
-  floor?: string;
+  code: string;
+  zone: string;
+  description?: string;
 }
 
 export interface OccupancySnapshot {
-  locationId: string;
-  locationName: string;
+  id: string;
+  name: string;
   currentCount: number;
   capacity: number;
   percentage: number;
   status: OccupancyStatus;
   measuredAt: string;
   dataMode: DataMode;
+  zone?: string;
 }
 
 export interface ConnectivitySnapshot {
-  locationId: string;
-  locationName: string;
+  id: string;
+  name: string;
   signalScore: number;
   signalDbm?: number;
   networkName?: string;
   measuredAt: string;
   dataMode: DataMode;
   quality: ConnectivityQuality;
+  zone?: string;
 }
 
 export interface LocationCondition {
-  location: CampusLocation;
+  id: string;
+  name: string;
+  zone: string;
   occupancy?: OccupancySnapshot;
   connectivity?: ConnectivitySnapshot;
+  dataMode: DataMode;
+  overallStatus: "normal" | "warning" | "critical";
+  lastUpdated: string;
 }
 
 export interface CampusOverviewMetrics {
   totalStudentsTracked: number;
-  totalMonitoredCapacity: number;
-  overallOccupancyPercentage: number;
   busyLocationsCount: number;
   lowConnectivityCount: number;
   locationsMonitored: number;
+  totalCapacityTracked: number;
+  averageOccupancyPercentage: number;
   averageSignalScore: number;
 }
 
-export interface LocationRankingItem {
+export interface RankedOccupancy {
   rank: number;
-  locationId: string;
-  locationName: string;
-  metricValue: number;
-  formattedValue: string;
-  statusLabel: string;
-  statusVariant: 'success' | 'warning' | 'critical' | 'default' | 'outline';
-  secondaryInfo?: string;
+  snapshot: OccupancySnapshot;
+}
+
+export interface RankedConnectivity {
+  rank: number;
+  snapshot: ConnectivitySnapshot;
 }
 
 export interface LiveCampusConditionsResponse {
-  timestamp: string;
-  dataMode: DataMode;
-  locations: CampusLocation[];
+  locations: LocationCondition[];
   occupancy: OccupancySnapshot[];
   connectivity: ConnectivitySnapshot[];
-  metadata?: {
-    source: string;
-    version: string;
-    refreshIntervalMs?: number;
-    notes?: string;
-  };
+  overview: CampusOverviewMetrics;
+  generatedAt: string;
+  dataMode: DataMode;
+  isSimulated: boolean;
+}
+
+export interface LiveConditionsFilterState {
+  searchQuery: string;
+  zoneFilter: string;
+  statusFilter: "all" | OccupancyStatus | ConnectivityQuality;
+  viewMode: "all" | "occupancy" | "connectivity" | "rankings";
 }

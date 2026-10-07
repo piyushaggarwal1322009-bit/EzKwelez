@@ -1,110 +1,85 @@
 /**
- * FreshnessIndicator Component
- * Displays human-readable data age and status (Fresh, Stale, Unavailable)
- * Owner: Tanisha
+ * Freshness Indicator Component
+ * Feature Owner: Tanisha
+ * Module: @/features/tanisha/live-campus
  */
 
-import * as React from 'react';
-import { Freshness } from '../types/campus';
-import { Clock, RefreshCw, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { Clock, AlertCircle } from "lucide-react";
+import { Freshness } from "../types/campus";
+import { deriveFreshness, formatRelativeFreshness } from "../lib/calculations";
+import { cn } from "@/lib/utils";
 
 export interface FreshnessIndicatorProps {
-  freshness: Freshness;
-  formattedTime: string;
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
+  measuredAt?: string | Date | number | null;
+  status?: Freshness;
   className?: string;
+  showIcon?: boolean;
 }
 
 export function FreshnessIndicator({
-  freshness,
-  formattedTime,
-  onRefresh,
-  isRefreshing = false,
+  measuredAt,
+  status,
   className,
+  showIcon = true,
 }: FreshnessIndicatorProps) {
-  const getStatusConfig = () => {
-    switch (freshness) {
-      case 'fresh':
-        return {
-          label: 'Fresh',
-          dotColor: 'bg-emerald-400',
-          textColor: 'text-emerald-400',
-          borderColor: 'border-emerald-800/40',
-          bg: 'bg-emerald-950/20',
-        };
-      case 'stale':
-        return {
-          label: 'Stale',
-          dotColor: 'bg-amber-400 animate-pulse',
-          textColor: 'text-amber-400',
-          borderColor: 'border-amber-800/50',
-          bg: 'bg-amber-950/30',
-        };
-      case 'unavailable':
-      default:
-        return {
-          label: 'Unavailable',
-          dotColor: 'bg-rose-400',
-          textColor: 'text-rose-400',
-          borderColor: 'border-rose-800/50',
-          bg: 'bg-rose-950/30',
-        };
-    }
+  const [now, setNow] = React.useState<number>(Date.now());
+
+  // Update relative time display every 10 seconds
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const derivedStatus = status || deriveFreshness(measuredAt, now);
+  const formattedTime = formatRelativeFreshness(measuredAt, now);
+
+  const statusConfig = {
+    fresh: {
+      dotClass: "bg-emerald-400",
+      textClass: "text-slate-400",
+      label: "Fresh Telemetry",
+    },
+    stale: {
+      dotClass: "bg-amber-400 animate-pulse",
+      textClass: "text-amber-400/90",
+      label: "Stale Telemetry (>1m old)",
+    },
+    unavailable: {
+      dotClass: "bg-rose-500",
+      textClass: "text-rose-400",
+      label: "Telemetry Stalled / Unavailable",
+    },
   };
 
-  const config = getStatusConfig();
+  const config = statusConfig[derivedStatus] || statusConfig.unavailable;
 
   return (
     <div
+      role="timer"
+      aria-live="polite"
+      aria-label={`${config.label}: ${formattedTime}`}
+      title={`${config.label}: ${formattedTime}`}
       className={cn(
-        'inline-flex items-center gap-3 px-3 py-1.5 rounded-lg border text-xs',
-        config.borderColor,
-        config.bg,
+        "inline-flex items-center gap-1.5 text-xs font-mono font-medium",
+        config.textClass,
         className
       )}
-      role="region"
-      aria-label={`Data freshness: ${config.label}, ${formattedTime}`}
     >
-      <div className="flex items-center gap-1.5">
-        <span
-          className={cn('inline-block w-2 h-2 rounded-full', config.dotColor)}
-          aria-hidden="true"
-        />
-        <span className={cn('font-semibold uppercase tracking-wider text-[11px]', config.textColor)}>
-          {config.label}
-        </span>
-      </div>
-
-      <div className="h-3 w-px bg-slate-700/60" aria-hidden="true" />
-
-      <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[11px]">
-        {freshness === 'unavailable' ? (
-          <AlertCircle className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
+      <span
+        className={cn("h-2 w-2 rounded-full ring-2 ring-slate-900", config.dotClass)}
+        aria-hidden="true"
+      />
+      {showIcon && (
+        derivedStatus === "unavailable" ? (
+          <AlertCircle className="h-3 w-3 text-rose-400" aria-hidden="true" />
         ) : (
-          <Clock className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
-        )}
-        <span>{formattedTime}</span>
-      </div>
-
-      {onRefresh && (
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          aria-label="Refresh campus conditions telemetry"
-          className={cn(
-            'ml-1 p-1 rounded hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500',
-            isRefreshing && 'opacity-60 cursor-not-allowed'
-          )}
-        >
-          <RefreshCw
-            className={cn('w-3.5 h-3.5', isRefreshing && 'animate-spin text-blue-400')}
-            aria-hidden="true"
-          />
-        </button>
+          <Clock className="h-3 w-3 text-slate-500" aria-hidden="true" />
+        )
       )}
+      <span>{formattedTime}</span>
     </div>
   );
 }

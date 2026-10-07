@@ -1,95 +1,80 @@
 /**
- * DataStatusBadge Component
- * Displays transparent indication of telemetry mode.
- * STRICT REQUIREMENT: Clearly displays "SIMULATED DATA" when running synthetic data.
- * Owner: Tanisha
+ * Data Status Badge Component
+ * Feature Owner: Tanisha
+ * Module: @/features/tanisha/live-campus
+ *
+ * NOTE: Explicitly marks simulated vs live data to prevent operational confusion.
  */
 
-import * as React from 'react';
-import { DataMode } from '../types/campus';
-import { Badge } from '@/components/ui/badge';
-import { Radio, Activity, Cpu, HelpCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { FlaskConical, Radio, Cpu, HelpCircle } from "lucide-react";
+import { DataMode } from "../types/campus";
+import { cn } from "@/lib/utils";
 
 export interface DataStatusBadgeProps {
-  dataMode: DataMode;
+  mode?: DataMode;
   className?: string;
-  size?: 'sm' | 'md';
+  size?: "sm" | "md";
 }
 
 export function DataStatusBadge({
-  dataMode,
+  mode = "simulated",
   className,
-  size = 'md',
+  size = "md",
 }: DataStatusBadgeProps) {
-  switch (dataMode) {
-    case 'simulated':
-      return (
-        <Badge
-          variant="warning"
-          className={cn(
-            'flex items-center gap-1.5 font-mono tracking-wider font-bold uppercase shadow-sm',
-            size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs',
-            className
-          )}
-          role="status"
-          aria-label="Data mode: Simulated data"
-        >
-          <Cpu className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} aria-hidden="true" />
-          <span>SIMULATED DATA</span>
-        </Badge>
-      );
+  const configs = {
+    simulated: {
+      label: "SIMULATED DATA",
+      description: "Synthetic operational scenario for demonstration and what-if analysis",
+      icon: FlaskConical,
+      className:
+        "bg-amber-950/70 text-amber-300 border-amber-700/60 shadow-amber-950/30",
+      dotClass: "bg-amber-400 animate-pulse",
+    },
+    live: {
+      label: "LIVE TELEMETRY",
+      description: "Direct real-time campus sensor feed",
+      icon: Radio,
+      className:
+        "bg-emerald-950/70 text-emerald-300 border-emerald-700/60 shadow-emerald-950/30",
+      dotClass: "bg-emerald-400 animate-pulse",
+    },
+    estimated: {
+      label: "ESTIMATED",
+      description: "Calculated from historical schedule and prior conditions",
+      icon: Cpu,
+      className:
+        "bg-sky-950/70 text-sky-300 border-sky-700/60 shadow-sky-950/30",
+      dotClass: "bg-sky-400",
+    },
+    unknown: {
+      label: "DATA UNKNOWN",
+      description: "Telemetry source unverified",
+      icon: HelpCircle,
+      className:
+        "bg-slate-900 text-slate-400 border-slate-700",
+      dotClass: "bg-slate-500",
+    },
+  };
 
-    case 'live':
-      return (
-        <Badge
-          variant="success"
-          className={cn(
-            'flex items-center gap-1.5 font-mono tracking-wider font-bold uppercase shadow-sm',
-            size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs',
-            className
-          )}
-          role="status"
-          aria-label="Data mode: Live telemetry"
-        >
-          <Radio className={cn('animate-pulse', size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5')} aria-hidden="true" />
-          <span>LIVE TELEMETRY</span>
-        </Badge>
-      );
+  const current = configs[mode] || configs.simulated;
+  const Icon = current.icon;
 
-    case 'estimated':
-      return (
-        <Badge
-          variant="outline"
-          className={cn(
-            'flex items-center gap-1.5 font-mono tracking-wider font-bold uppercase border-cyan-800 text-cyan-300 bg-cyan-950/40',
-            size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs',
-            className
-          )}
-          role="status"
-          aria-label="Data mode: Estimated data"
-        >
-          <Activity className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} aria-hidden="true" />
-          <span>ESTIMATED</span>
-        </Badge>
-      );
-
-    case 'unknown':
-    default:
-      return (
-        <Badge
-          variant="default"
-          className={cn(
-            'flex items-center gap-1.5 font-mono tracking-wider text-slate-400',
-            size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs',
-            className
-          )}
-          role="status"
-          aria-label="Data mode: Unknown source"
-        >
-          <HelpCircle className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} aria-hidden="true" />
-          <span>UNKNOWN SOURCE</span>
-        </Badge>
-      );
-  }
+  return (
+    <div
+      role="status"
+      aria-label={`Data mode: ${current.label}. ${current.description}`}
+      title={current.description}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border font-mono uppercase tracking-wider font-semibold shadow-sm transition-colors",
+        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+        current.className,
+        className
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", current.dotClass)} aria-hidden="true" />
+      <Icon className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} aria-hidden="true" />
+      <span>{current.label}</span>
+    </div>
+  );
 }
