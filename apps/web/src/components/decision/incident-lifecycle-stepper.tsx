@@ -16,7 +16,7 @@ const LIFECYCLE_STAGES: { status: IncidentStatus; label: string; description: st
   { status: IncidentStatus.RESOLVED, label: "Resolved", description: "Full restoration" },
 ];
 
-const STATUS_ORDER: Record<IncidentStatus, number> = {
+const STATUS_ORDER: Partial<Record<IncidentStatus, number>> = {
   [IncidentStatus.REPORTED]: 1,
   [IncidentStatus.TRIAGED]: 2,
   [IncidentStatus.INVESTIGATING]: 3,
@@ -30,7 +30,7 @@ export function IncidentLifecycleStepper({
   currentStatus,
   className = "",
 }: IncidentLifecycleStepperProps) {
-  const currentOrder = STATUS_ORDER[currentStatus] || 1;
+  const currentOrder = STATUS_ORDER[currentStatus] ?? 1;
 
   return (
     <div
@@ -38,7 +38,7 @@ export function IncidentLifecycleStepper({
     >
       <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 text-xs">
         {LIFECYCLE_STAGES.map((stage, idx) => {
-          const stageOrder = STATUS_ORDER[stage.status];
+          const stageOrder = STATUS_ORDER[stage.status] ?? 1;
           const isPassed = stageOrder < currentOrder;
           const isCurrent = stage.status === currentStatus;
 

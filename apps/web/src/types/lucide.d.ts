@@ -82,6 +82,7 @@ declare module 'lucide-react' {
   export const Signal: LucideIcon;
   export const Sliders: LucideIcon;
   export const Sparkles: LucideIcon;
+  export const TrendingUp: LucideIcon;
   export const User: LucideIcon;
   export const UserCheck: LucideIcon;
   export const Users: LucideIcon;
