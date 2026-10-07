@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 from app.api.routes.campus import router as campus_router
+from app.api.routes.campus_incidents import router as campus_incidents_router
 from app.api.routes.graph import router as graph_router
 from app.api.routes.health import router as health_router
 from app.api.routes.impact import router as impact_router
@@ -23,3 +24,4 @@ api_router.include_router(impact_router)
 
 # Register incidents & disruption management router (Phase 5)
 api_router.include_router(incidents_router)
+api_router.include_router(campus_incidents_router)

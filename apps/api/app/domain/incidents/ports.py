@@ -6,6 +6,7 @@ from app.domain.campus.models import DataMode
 from app.domain.incidents.models import (
     DomainEvent,
     Incident,
+    IncidentAffectedEntity,
     IncidentSeverity,
     IncidentStatus,
     IncidentType,
@@ -41,8 +42,14 @@ class IncidentRepository(ABC):
         data_mode: Optional[DataMode] = None,
         limit: int = 50,
         offset: int = 0,
+        campus_id: Optional[str] = None,
     ) -> List[Incident]:
         """List incidents with optional filtering."""
+        pass
+
+    @abstractmethod
+    async def list_by_campus(self, campus_id: str) -> List[Incident]:
+        """List incidents owned by one campus."""
         pass
 
     @abstractmethod
@@ -58,6 +65,16 @@ class IncidentRepository(ABC):
     @abstractmethod
     async def exists_by_idempotency_key(self, key: str) -> Optional[Incident]:
         """Check if an incident was already created with a given idempotency key."""
+        pass
+
+    @abstractmethod
+    async def add_affected_entity(self, relationship: IncidentAffectedEntity) -> IncidentAffectedEntity:
+        """Attach one explicitly affected graph entity to an incident."""
+        pass
+
+    @abstractmethod
+    async def list_affected_entities(self, incident_id: str) -> List[IncidentAffectedEntity]:
+        """List only entities explicitly attached to an incident."""
         pass
 
 

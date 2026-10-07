@@ -14,6 +14,7 @@ class DependencyNodeDTO(BaseModel):
     status: NodeStatus = NodeStatus.OPERATIONAL
     criticality: Criticality = Criticality.MEDIUM
     location_id: Optional[str] = Field(default=None, alias="locationId")
+    campus_id: Optional[str] = Field(default=None, alias="campusId")
     metadata: Dict[str, Any] = Field(default_factory=dict)
     created_at: Optional[str] = Field(default=None, alias="createdAt")
 

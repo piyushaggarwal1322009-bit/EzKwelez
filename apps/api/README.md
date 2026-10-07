@@ -44,6 +44,19 @@ Or from `apps/api`:
 uvicorn app.main:app --reload --port 8000
 ```
 
+Set `EZYKWELEZ_DEV_AUTH_BYPASS=true` only for local/demo use to enable incident
+mutations. The temporary development identity is isolated in the API auth
+adapter, ignored in production, and is not a Supabase user. Supabase
+authentication remains deferred.
+
+The current API uses singleton in-memory repositories for local/demo runtime;
+incident writes are process-local. Migrations `00003` and `00004` define the
+PostgreSQL incident, explicit-entity, and audit schema for the persistence
+adapter milestone. Effective state is derived only from directly linked
+`active`/`mitigated` incidents; it never traverses dependency edges. Overlapping
+incidents are resolved deterministically by severity of the resulting state,
+and resolving one link leaves any other active link in effect.
+
 ## Testing
 
 ```bash

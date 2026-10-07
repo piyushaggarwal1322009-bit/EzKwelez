@@ -1,6 +1,8 @@
 """In-memory implementation of DependencyGraphRepository pre-seeded with synthetic topology."""
 
+from dataclasses import replace
 from typing import Dict, List, Optional
+from app.domain.campus.models import DEFAULT_CAMPUS_ID
 from app.domain.graph.models import (
     Criticality,
     DependencyEdge,
@@ -24,7 +26,10 @@ class InMemoryDependencyGraphRepository(DependencyGraphRepository):
         if nodes is not None:
             self._nodes = {n.id: n for n in nodes}
         else:
-            self._nodes = self._init_default_nodes()
+            self._nodes = {
+                node.id: replace(node, campus_id=DEFAULT_CAMPUS_ID)
+                for node in self._init_default_nodes().values()
+            }
 
         if edges is not None:
             self._edges = list(edges)

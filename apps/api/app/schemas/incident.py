@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 from app.domain.campus.models import DataMode
-from app.domain.graph.models import Criticality
+from app.domain.graph.models import Criticality, NodeStatus, NodeType
 from app.domain.impact.models import FailureType
 from app.domain.incidents.models import (
     IncidentSeverity,
@@ -18,6 +18,7 @@ class IncidentDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: str
+    campus_id: str = Field(..., alias="campusId")
     title: str
     description: str
     type: IncidentType
@@ -31,10 +32,12 @@ class IncidentDTO(BaseModel):
     acknowledged_at: Optional[str] = Field(default=None, alias="acknowledgedAt")
     resolved_at: Optional[str] = Field(default=None, alias="resolvedAt")
     closed_at: Optional[str] = Field(default=None, alias="closedAt")
+    cancelled_at: Optional[str] = Field(default=None, alias="cancelledAt")
     created_at: str = Field(..., alias="createdAt")
     updated_at: str = Field(..., alias="updatedAt")
     data_mode: DataMode = Field(..., alias="dataMode")
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    estimated_duration_minutes: Optional[int] = Field(default=None, alias="estimatedDurationMinutes")
 
 
 class CreateIncidentRequestDTO(BaseModel):
@@ -50,6 +53,7 @@ class CreateIncidentRequestDTO(BaseModel):
     root_node_id: Optional[str] = Field(default=None, alias="rootNodeId")
     started_at: Optional[str] = Field(default=None, alias="startedAt")
     detected_at: Optional[str] = Field(default=None, alias="detectedAt")
+    estimated_duration_minutes: Optional[int] = Field(default=None, gt=0, alias="estimatedDurationMinutes")
     data_mode: DataMode = Field(default=DataMode.SIMULATED, alias="dataMode")
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
@@ -87,3 +91,35 @@ class IncidentToImpactHandoffDTO(BaseModel):
     severity: Criticality
     occurred_at: str = Field(..., alias="occurredAt")
     data_mode: DataMode = Field(..., alias="dataMode")
+
+
+class AddAffectedEntityRequestDTO(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    node_id: str = Field(..., min_length=1, alias="nodeId")
+    reason: str = Field(..., min_length=3, max_length=500)
+
+
+class IncidentAffectedEntityDTO(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    incident_id: str = Field(..., alias="incidentId")
+    campus_id: str = Field(..., alias="campusId")
+    node_id: str = Field(..., alias="nodeId")
+    reason: str
+    created_by: str = Field(..., alias="createdBy")
+    created_at: str = Field(..., alias="createdAt")
+
+
+class EntityOperationalStateDTO(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    campus_id: str = Field(..., alias="campusId")
+    node_id: str = Field(..., alias="nodeId")
+    node_type: NodeType = Field(..., alias="nodeType")
+    node_name: str = Field(..., alias="nodeName")
+    status: NodeStatus
+    reason: str
+    related_incident_ids: List[str] = Field(..., alias="relatedIncidentIds")
+    location_id: Optional[str] = Field(default=None, alias="locationId")
+    updated_at: str = Field(..., alias="updatedAt")

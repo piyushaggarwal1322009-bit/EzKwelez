@@ -1,6 +1,7 @@
 import { apiClient } from "./api-client";
 import {
   CreateIncidentRequest,
+  IncidentAffectedEntity,
   Incident,
   IncidentSeverity,
   IncidentStatus,
@@ -46,6 +47,30 @@ export const incidentService = {
       headers["Idempotency-Key"] = idempotencyKey;
     }
     return apiClient.post<Incident>("/incidents", payload, { headers });
+  },
+
+  async createCampusIncident(
+    campusId: string,
+    payload: CreateIncidentRequest,
+    idempotencyKey?: string
+  ): Promise<Incident> {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+    return apiClient.post<Incident>(`/campuses/${campusId}/incidents`, payload, { headers });
+  },
+
+  async addAffectedEntity(
+    incidentId: string,
+    payload: { nodeId: string; reason: string }
+  ): Promise<IncidentAffectedEntity> {
+    return apiClient.post<IncidentAffectedEntity>(
+      `/incidents/${incidentId}/affected-entities`,
+      payload
+    );
+  },
+
+  async getAffectedEntities(incidentId: string): Promise<IncidentAffectedEntity[]> {
+    return apiClient.get<IncidentAffectedEntity[]>(`/incidents/${incidentId}/affected-entities`);
   },
 
   async transitionIncident(

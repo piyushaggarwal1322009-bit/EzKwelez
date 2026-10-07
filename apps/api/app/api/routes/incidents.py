@@ -4,24 +4,35 @@ from datetime import datetime, timezone
 from typing import List, Optional
 import uuid
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
-from app.api.dependencies import get_incident_service
+from app.api.dependencies import get_development_principal, get_incident_service
 from app.application.incident_service import (
+    AffectedEntityNotFoundError,
+    CrossCampusEntityError,
+    DuplicateAffectedEntityError,
     IncidentApplicationService,
     IncidentNotFoundError,
+    IncidentRootNodeNotFoundError,
+    IncidentCampusNotFoundError,
+    IncidentLocationNotFoundError,
+    InvalidAffectedEntityTypeError,
 )
 from app.domain.campus.models import DataMode
 from app.domain.incidents.models import (
     Incident,
+    IncidentAffectedEntity,
     IncidentSeverity,
     IncidentSource,
     IncidentStatus,
     IncidentType,
     IncidentUpdate,
 )
+from app.infrastructure.auth import DevelopmentPrincipal
 from app.domain.incidents.rules import InvalidStatusTransitionError
 from app.schemas.campus import ApiErrorEnvelope, ApiResponseEnvelope, ApiResponseMeta
 from app.schemas.incident import (
+    AddAffectedEntityRequestDTO,
     CreateIncidentRequestDTO,
+    IncidentAffectedEntityDTO,
     IncidentDTO,
     IncidentToImpactHandoffDTO,
     IncidentUpdateDTO,
@@ -43,6 +54,7 @@ def generate_meta(data_mode: str = "simulated", cached: bool = False) -> ApiResp
 def map_incident_to_dto(inc: Incident) -> IncidentDTO:
     return IncidentDTO(
         id=inc.id,
+        campusId=inc.campus_id,
         title=inc.title,
         description=inc.description,
         type=inc.type,
@@ -56,10 +68,23 @@ def map_incident_to_dto(inc: Incident) -> IncidentDTO:
         acknowledgedAt=inc.acknowledged_at,
         resolvedAt=inc.resolved_at,
         closedAt=inc.closed_at,
+        cancelledAt=inc.cancelled_at,
         createdAt=inc.created_at,
         updatedAt=inc.updated_at,
         dataMode=inc.data_mode,
         metadata=inc.metadata,
+        estimatedDurationMinutes=inc.estimated_duration_minutes,
+    )
+
+
+def map_affected_entity_to_dto(entity: IncidentAffectedEntity) -> IncidentAffectedEntityDTO:
+    return IncidentAffectedEntityDTO(
+        incidentId=entity.incident_id,
+        campusId=entity.campus_id,
+        nodeId=entity.node_id,
+        reason=entity.reason,
+        createdBy=entity.created_by,
+        createdAt=entity.created_at,
     )
 
 
@@ -92,6 +117,7 @@ def map_update_to_dto(upd: IncidentUpdate) -> IncidentUpdateDTO:
 async def create_incident(
     request: CreateIncidentRequestDTO,
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
     service: IncidentApplicationService = Depends(get_incident_service),
 ):
     """Creates a new authoritative incident record with audit history."""
@@ -101,6 +127,8 @@ async def create_incident(
             description=request.description,
             incident_type=request.type,
             severity=request.severity,
+            campus_id=principal.campus_id,
+            estimated_duration_minutes=request.estimated_duration_minutes,
             source=request.source,
             status=request.status,
             location_id=request.location_id,
@@ -108,7 +136,7 @@ async def create_incident(
             started_at=request.started_at,
             detected_at=request.detected_at,
             data_mode=request.data_mode,
-            actor_id="api_client",
+            actor_id=principal.actor_id,
             idempotency_key=idempotency_key,
             metadata=request.metadata,
         )
@@ -124,6 +152,10 @@ async def create_incident(
                 }
             },
         )
+    except IncidentCampusNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"error": {"code": "CAMPUS_NOT_FOUND", "message": str(e)}})
+    except (IncidentLocationNotFoundError, IncidentRootNodeNotFoundError) as e:
+        raise HTTPException(status_code=400, detail={"error": {"code": "INVALID_CAMPUS_REFERENCE", "message": str(e)}})
 
     return ApiResponseEnvelope(
         data=map_incident_to_dto(incident),
@@ -142,6 +174,7 @@ async def list_incidents(
     type_filter: Optional[IncidentType] = Query(None, alias="type"),
     location_id: Optional[str] = Query(None, alias="locationId"),
     data_mode: Optional[DataMode] = Query(None, alias="dataMode"),
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     service: IncidentApplicationService = Depends(get_incident_service),
@@ -155,6 +188,7 @@ async def list_incidents(
         data_mode=data_mode,
         limit=limit,
         offset=offset,
+        campus_id=principal.campus_id,
     )
     return ApiResponseEnvelope(
         data=[map_incident_to_dto(inc) for inc in incidents],
@@ -172,11 +206,12 @@ async def list_incidents(
 )
 async def get_incident(
     incident_id: str,
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
     service: IncidentApplicationService = Depends(get_incident_service),
 ):
     """Fetches details for a specific incident."""
     try:
-        incident = await service.get_incident(incident_id)
+        incident = await service.get_incident_in_campus(incident_id, principal.campus_id)
     except IncidentNotFoundError as e:
         req_id = f"req_{uuid.uuid4().hex[:12]}"
         raise HTTPException(
@@ -209,6 +244,7 @@ async def get_incident(
 async def transition_incident(
     incident_id: str,
     request: TransitionIncidentRequestDTO,
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
     service: IncidentApplicationService = Depends(get_incident_service),
 ):
     """Advances or updates the state machine status of an incident with audit trail."""
@@ -216,8 +252,9 @@ async def transition_incident(
         updated = await service.transition_incident_status(
             incident_id=incident_id,
             target_status=request.target_status,
-            actor_id=request.actor_id,
+            actor_id=principal.actor_id,
             message=request.message,
+            campus_id=principal.campus_id,
         )
     except IncidentNotFoundError as e:
         req_id = f"req_{uuid.uuid4().hex[:12]}"
@@ -266,10 +303,12 @@ async def transition_incident(
 )
 async def get_incident_updates(
     incident_id: str,
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
     service: IncidentApplicationService = Depends(get_incident_service),
 ):
     """Retrieves full audit log history for an incident."""
     try:
+        await service.get_incident_in_campus(incident_id, principal.campus_id)
         updates = await service.list_incident_updates(incident_id)
     except IncidentNotFoundError as e:
         req_id = f"req_{uuid.uuid4().hex[:12]}"
@@ -291,6 +330,58 @@ async def get_incident_updates(
     )
 
 
+@router.post(
+    "/{incident_id}/affected-entities",
+    response_model=ApiResponseEnvelope[IncidentAffectedEntityDTO],
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_affected_entity(
+    incident_id: str,
+    request: AddAffectedEntityRequestDTO,
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
+    service: IncidentApplicationService = Depends(get_incident_service),
+):
+    try:
+        relationship = await service.add_affected_entity(
+            incident_id=incident_id,
+            node_id=request.node_id,
+            reason=request.reason,
+            actor_id=principal.actor_id,
+            campus_id=principal.campus_id,
+        )
+    except IncidentNotFoundError as error:
+        raise HTTPException(status_code=404, detail={"error": {"code": "INCIDENT_NOT_FOUND", "message": str(error)}})
+    except AffectedEntityNotFoundError as error:
+        raise HTTPException(status_code=404, detail={"error": {"code": "ENTITY_NOT_FOUND", "message": str(error)}})
+    except CrossCampusEntityError as error:
+        raise HTTPException(status_code=400, detail={"error": {"code": "CROSS_CAMPUS_ENTITY", "message": str(error)}})
+    except InvalidAffectedEntityTypeError as error:
+        raise HTTPException(status_code=400, detail={"error": {"code": "INVALID_ENTITY_TYPE", "message": str(error)}})
+    except DuplicateAffectedEntityError as error:
+        raise HTTPException(status_code=409, detail={"error": {"code": "DUPLICATE_AFFECTED_ENTITY", "message": str(error)}})
+
+    return ApiResponseEnvelope(data=map_affected_entity_to_dto(relationship), meta=generate_meta())
+
+
+@router.get(
+    "/{incident_id}/affected-entities",
+    response_model=ApiResponseEnvelope[List[IncidentAffectedEntityDTO]],
+)
+async def get_affected_entities(
+    incident_id: str,
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
+    service: IncidentApplicationService = Depends(get_incident_service),
+):
+    try:
+        entities = await service.list_affected_entities(incident_id, principal.campus_id)
+    except IncidentNotFoundError as error:
+        raise HTTPException(status_code=404, detail={"error": {"code": "INCIDENT_NOT_FOUND", "message": str(error)}})
+    return ApiResponseEnvelope(
+        data=[map_affected_entity_to_dto(entity) for entity in entities],
+        meta=generate_meta(),
+    )
+
+
 @router.get(
     "/{incident_id}/impact-handoff",
     response_model=ApiResponseEnvelope[IncidentToImpactHandoffDTO],
@@ -302,11 +393,12 @@ async def get_incident_updates(
 )
 async def get_impact_handoff(
     incident_id: str,
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
     service: IncidentApplicationService = Depends(get_incident_service),
 ):
     """Produces the minimal contract required to trigger Phase 4 impact blast radius analysis."""
     try:
-        handoff = await service.get_impact_analysis_handoff(incident_id)
+        handoff = await service.get_impact_analysis_handoff(incident_id, principal.campus_id)
     except IncidentNotFoundError as e:
         req_id = f"req_{uuid.uuid4().hex[:12]}"
         raise HTTPException(

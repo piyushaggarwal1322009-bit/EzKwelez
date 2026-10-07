@@ -48,25 +48,30 @@ class IncidentStateMachine:
         IncidentStatus.REPORTED: {
             IncidentStatus.TRIAGED,
             IncidentStatus.CLOSED,
+            IncidentStatus.CANCELLED,
         },
         IncidentStatus.TRIAGED: {
             IncidentStatus.INVESTIGATING,
             IncidentStatus.ACTIVE,
             IncidentStatus.CLOSED,
+            IncidentStatus.CANCELLED,
         },
         IncidentStatus.INVESTIGATING: {
             IncidentStatus.ACTIVE,
             IncidentStatus.MITIGATED,
             IncidentStatus.RESOLVED,
             IncidentStatus.CLOSED,
+            IncidentStatus.CANCELLED,
         },
         IncidentStatus.ACTIVE: {
             IncidentStatus.MITIGATED,
             IncidentStatus.RESOLVED,
+            IncidentStatus.CANCELLED,
         },
         IncidentStatus.MITIGATED: {
             IncidentStatus.ACTIVE,
             IncidentStatus.RESOLVED,
+            IncidentStatus.CANCELLED,
         },
         IncidentStatus.RESOLVED: {
             IncidentStatus.CLOSED,
@@ -129,6 +134,8 @@ class IncidentStateMachine:
             if not incident.resolved_at:
                 fields_to_update["resolved_at"] = now
             fields_to_update["closed_at"] = now
+        elif target_status == IncidentStatus.CANCELLED:
+            fields_to_update["cancelled_at"] = now
 
         updated_incident = replace(incident, **fields_to_update)
 
@@ -140,6 +147,8 @@ class IncidentStateMachine:
             update_type = IncidentUpdateType.CLOSED
         elif target_status == IncidentStatus.MITIGATED:
             update_type = IncidentUpdateType.MITIGATED
+        elif target_status == IncidentStatus.CANCELLED:
+            update_type = IncidentUpdateType.CANCELLED
 
         audit_update = IncidentUpdate(
             id=f"upd_{incident.id}_{int(datetime.now(timezone.utc).timestamp()*1000)}",

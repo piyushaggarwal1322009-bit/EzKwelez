@@ -19,6 +19,7 @@ from app.domain.incidents.rules import (
 def test_valid_incident_creation():
     incident = Incident(
         id="inc-test-1",
+        campus_id="c0000000-0000-0000-0000-000000000001",
         title="Fiber Cable Severed",
         description="Core optical fiber line cut near Library North quad.",
         type=IncidentType.NETWORK_OUTAGE,
@@ -39,6 +40,7 @@ def test_incident_empty_title_validation():
     with pytest.raises(ValueError, match="Incident title cannot be empty"):
         Incident(
             id="inc-test-2",
+            campus_id="c0000000-0000-0000-0000-000000000001",
             title="   ",
             description="Empty title test",
             type=IncidentType.POWER_OUTAGE,
@@ -51,6 +53,7 @@ def test_incident_timestamp_invariants():
     with pytest.raises(ValueError, match="resolved_at .* cannot precede started_at"):
         Incident(
             id="inc-test-3",
+            campus_id="c0000000-0000-0000-0000-000000000001",
             title="Timestamp invariant failure",
             description="Resolved before started",
             type=IncidentType.EQUIPMENT_FAILURE,
@@ -64,6 +67,7 @@ def test_incident_timestamp_invariants():
 def test_state_machine_valid_lifecycle_transitions():
     incident = Incident(
         id="inc-test-lifecycle",
+        campus_id="c0000000-0000-0000-0000-000000000001",
         title="Substation Fault",
         description="Transformer breaker tripped.",
         type=IncidentType.POWER_OUTAGE,
@@ -106,6 +110,7 @@ def test_state_machine_valid_lifecycle_transitions():
 def test_state_machine_invalid_transition():
     incident = Incident(
         id="inc-test-invalid",
+        campus_id="c0000000-0000-0000-0000-000000000001",
         title="Water leak",
         description="Basement pipe leak.",
         type=IncidentType.WATER_OUTAGE,
@@ -119,3 +124,36 @@ def test_state_machine_invalid_transition():
 
     assert exc_info.value.from_status == IncidentStatus.REPORTED
     assert exc_info.value.to_status == IncidentStatus.RESOLVED
+
+
+def test_reported_incident_can_be_cancelled_with_timestamp():
+    incident = Incident(
+        id="inc-test-cancel",
+        campus_id="c0000000-0000-0000-0000-000000000001",
+        title="False alarm",
+        description="A reported incident was not confirmed.",
+        type=IncidentType.OTHER,
+        severity=IncidentSeverity.LOW,
+        status=IncidentStatus.REPORTED,
+    )
+
+    cancelled, update, _ = IncidentStateMachine.transition(incident, IncidentStatus.CANCELLED)
+
+    assert cancelled.status == IncidentStatus.CANCELLED
+    assert cancelled.cancelled_at is not None
+    assert update.type == IncidentUpdateType.CANCELLED
+
+
+def test_resolved_incident_cannot_be_reactivated():
+    incident = Incident(
+        id="inc-test-resolved",
+        campus_id="c0000000-0000-0000-0000-000000000001",
+        title="Resolved incident",
+        description="A closed-out incident cannot be silently reopened.",
+        type=IncidentType.NETWORK_OUTAGE,
+        severity=IncidentSeverity.LOW,
+        status=IncidentStatus.RESOLVED,
+    )
+
+    with pytest.raises(InvalidStatusTransitionError):
+        IncidentStateMachine.transition(incident, IncidentStatus.ACTIVE)

@@ -4,6 +4,7 @@
  */
 
 export enum IncidentSeverity {
+  INFO = "info",
   LOW = "low",
   MODERATE = "moderate",
   HIGH = "high",
@@ -18,6 +19,7 @@ export enum IncidentStatus {
   MITIGATED = "mitigated",
   RESOLVED = "resolved",
   CLOSED = "closed",
+  CANCELLED = "cancelled",
 }
 
 export enum IncidentType {
@@ -31,6 +33,10 @@ export enum IncidentType {
   CAPACITY_ISSUE = "capacity_issue",
   MAINTENANCE = "maintenance",
   ENVIRONMENTAL = "environmental",
+  HVAC_ISSUE = "hvac_issue",
+  COMMUNICATIONS_OUTAGE = "communications_outage",
+  ACCESS_ISSUE = "access_issue",
+  OPERATIONAL = "operational",
   OTHER = "other",
 }
 
@@ -55,6 +61,8 @@ export enum IncidentUpdateType {
   MITIGATED = "mitigated",
   RESOLVED = "resolved",
   CLOSED = "closed",
+  CANCELLED = "cancelled",
+  AFFECTED_ENTITY_ADDED = "affected_entity_added",
 }
 
 export enum EntityType {
@@ -63,6 +71,7 @@ export enum EntityType {
   ZONE = "ZONE",
   ROOM = "ROOM",
   RESOURCE = "RESOURCE",
+  SERVICE = "SERVICE",
   CLASS_SESSION = "CLASS_SESSION",
   FACILITY = "FACILITY",
 }
@@ -188,6 +197,8 @@ export enum NodeStatus {
   OPERATIONAL = "operational",
   DEGRADED = "degraded",
   DISRUPTED = "disrupted",
+  OFFLINE = "offline",
+  MAINTENANCE = "maintenance",
   FAILED = "failed",
   UNKNOWN = "unknown",
 }

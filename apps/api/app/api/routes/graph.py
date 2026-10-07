@@ -38,6 +38,7 @@ async def list_dependency_nodes(
             status=n.status,
             criticality=n.criticality,
             locationId=n.location_id,
+            campusId=n.campus_id,
             metadata=n.metadata,
             createdAt=n.created_at,
         )
@@ -79,6 +80,7 @@ async def get_dependency_node(
         status=node.status,
         criticality=node.criticality,
         locationId=node.location_id,
+        campusId=node.campus_id,
         metadata=node.metadata,
         createdAt=node.created_at,
     )
@@ -136,6 +138,7 @@ async def get_graph_snapshot(
             status=n.status,
             criticality=n.criticality,
             locationId=n.location_id,
+            campusId=n.campus_id,
             metadata=n.metadata,
             createdAt=n.created_at,
         )

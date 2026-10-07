@@ -1,7 +1,8 @@
 """API Dependencies and Dependency Injection Providers."""
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from app.application.condition_service import ConditionAggregationService
+from app.application.campus_state_service import CampusStateService
 from app.application.impact_service import (
     BreadthFirstTraversalService,
     DefaultImpactAnalysisService,
@@ -13,6 +14,7 @@ from app.domain.graph.ports import CampusContextProvider, DependencyGraphReposit
 from app.domain.impact.ports import DependencyTraversalService, ImpactAnalysisEngine
 from app.domain.incidents.ports import IncidentEventPublisher, IncidentRepository
 from app.infrastructure.adapters.campus_context_adapter import CampusContextAdapter
+from app.infrastructure.auth import DevelopmentPrincipal, resolve_development_principal
 from app.infrastructure.adapters.in_memory_event_publisher import InMemoryIncidentEventPublisher
 from app.infrastructure.repositories.in_memory_campus_repository import InMemoryCampusRepository
 from app.infrastructure.repositories.in_memory_graph_repository import InMemoryDependencyGraphRepository
@@ -34,6 +36,18 @@ _campus_context_adapter = CampusContextAdapter(_campus_repo)
 def get_app_settings() -> Settings:
     """Dependency providing validated application settings."""
     return get_settings()
+
+
+def get_development_principal(
+    settings: Settings = Depends(get_app_settings),
+) -> DevelopmentPrincipal:
+    principal = resolve_development_principal(settings)
+    if principal is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"error": {"code": "AUTH_NOT_CONFIGURED", "message": "Enable the development auth bypass for local demo mutations."}},
+        )
+    return principal
 
 
 def get_campus_repository() -> CampusRepository:
@@ -107,9 +121,25 @@ def get_impact_analysis_service(
 def get_incident_service(
     incident_repo: IncidentRepository = Depends(get_incident_repository),
     event_publisher: IncidentEventPublisher = Depends(get_incident_event_publisher),
+    graph_repo: DependencyGraphRepository = Depends(get_graph_repository),
+    campus_repo: CampusRepository = Depends(get_campus_repository),
 ) -> IncidentApplicationService:
     """Provide IncidentApplicationService instance."""
     return IncidentApplicationService(
         repository=incident_repo,
         event_publisher=event_publisher,
+        graph_repository=graph_repo,
+        campus_repository=campus_repo,
+    )
+
+
+def get_campus_state_service(
+    campus_repo: CampusRepository = Depends(get_campus_repository),
+    graph_repo: DependencyGraphRepository = Depends(get_graph_repository),
+    incident_repo: IncidentRepository = Depends(get_incident_repository),
+) -> CampusStateService:
+    return CampusStateService(
+        campus_repository=campus_repo,
+        graph_repository=graph_repo,
+        incident_repository=incident_repo,
     )

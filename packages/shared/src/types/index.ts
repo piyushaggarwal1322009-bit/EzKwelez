@@ -139,6 +139,7 @@ export interface DependencyNode {
   status: NodeStatus;
   criticality: Criticality;
   locationId?: string;
+  campusId?: string;
   metadata?: Record<string, unknown>;
   createdAt?: string;
 }
@@ -241,6 +242,7 @@ export interface ImpactAnalysisRequest {
 
 export interface Incident {
   id: string;
+  campusId: string;
   title: string;
   description: string;
   type: IncidentType;
@@ -254,6 +256,8 @@ export interface Incident {
   acknowledgedAt?: string;
   resolvedAt?: string;
   closedAt?: string;
+  cancelledAt?: string;
+  estimatedDurationMinutes?: number;
   createdAt: string;
   updatedAt: string;
   dataMode: DataMode;
@@ -274,6 +278,27 @@ export interface IncidentUpdate {
   metadata?: Record<string, unknown>;
 }
 
+export interface IncidentAffectedEntity {
+  incidentId: string;
+  campusId: string;
+  nodeId: string;
+  reason: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface EntityOperationalState {
+  campusId: string;
+  nodeId: string;
+  nodeType: NodeType;
+  nodeName: string;
+  status: NodeStatus;
+  reason: string;
+  relatedIncidentIds: string[];
+  locationId?: string;
+  updatedAt: string;
+}
+
 export interface CreateIncidentRequest {
   title: string;
   description?: string;
@@ -285,6 +310,7 @@ export interface CreateIncidentRequest {
   rootNodeId?: string;
   startedAt?: string;
   detectedAt?: string;
+  estimatedDurationMinutes?: number;
   dataMode?: DataMode;
   metadata?: Record<string, unknown>;
 }

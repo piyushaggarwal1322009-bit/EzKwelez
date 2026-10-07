@@ -41,6 +41,8 @@ class NodeStatus(str, Enum):
     OPERATIONAL = "operational"
     DEGRADED = "degraded"
     DISRUPTED = "disrupted"
+    OFFLINE = "offline"
+    MAINTENANCE = "maintenance"
     FAILED = "failed"
     UNKNOWN = "unknown"
 
@@ -56,6 +58,7 @@ class DependencyNode:
     location_id: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    campus_id: Optional[str] = None
 
     def __post_init__(self):
         if not self.id or not self.id.strip():

@@ -17,7 +17,9 @@ import { graphService } from "@/services/graph-service";
 import {
   CampusLocation,
   DependencyNode,
+  EntityOperationalState,
   Incident,
+  IncidentAffectedEntity,
   IncidentStatus,
   IncidentUpdate,
 } from "@ezykwelez/shared";
@@ -42,6 +44,8 @@ export default function IncidentDetailPage() {
 
   const [incident, setIncident] = React.useState<Incident | null>(null);
   const [updates, setUpdates] = React.useState<IncidentUpdate[]>([]);
+  const [affectedEntities, setAffectedEntities] = React.useState<IncidentAffectedEntity[]>([]);
+  const [entityStates, setEntityStates] = React.useState<EntityOperationalState[]>([]);
   const [location, setLocation] = React.useState<CampusLocation | null>(null);
   const [rootNode, setRootNode] = React.useState<DependencyNode | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -57,13 +61,18 @@ export default function IncidentDetailPage() {
     if (!incidentId || typeof incidentId !== "string") return;
     try {
       setError(null);
-      const [incRes, updatesRes] = await Promise.all([
+      const [incRes, updatesRes, affectedRes] = await Promise.all([
         incidentService.getIncident(incidentId),
         incidentService.getIncidentUpdates(incidentId),
+        incidentService.getAffectedEntities(incidentId),
       ]);
 
       setIncident(incRes);
       setUpdates(updatesRes);
+      setAffectedEntities(affectedRes);
+      setEntityStates(await Promise.all(
+        affectedRes.map((entity) => campusService.getEntityState(incRes.campusId, entity.nodeId))
+      ));
 
       if (incRes.locationId) {
         campusService.getLocations().then((locs) => {
@@ -94,7 +103,6 @@ export default function IncidentDetailPage() {
     try {
       const updated = await incidentService.transitionIncident(incident.id, {
         targetStatus,
-        actorId: "campus_operations_lead",
         message: transitionMessage || undefined,
       });
       setIncident(updated);
@@ -240,7 +248,7 @@ export default function IncidentDetailPage() {
             <CardContent className="space-y-4">
               <p className="text-sm text-slate-200 leading-relaxed">{incident.description}</p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-800 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-3 border-t border-slate-800 text-xs">
                 <div>
                   <span className="text-[10px] text-slate-500 uppercase block">Category</span>
                   <span className="font-semibold text-slate-200 capitalize">
@@ -261,7 +269,47 @@ export default function IncidentDetailPage() {
                   <span className="text-[10px] text-slate-500 uppercase block">Current Status</span>
                   <span className="font-semibold text-slate-200 capitalize">{incident.status}</span>
                 </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase block">Estimated Duration</span>
+                  <span className="font-semibold text-slate-200">
+                    {incident.estimatedDurationMinutes ? `${incident.estimatedDurationMinutes} min` : "Not set"}
+                  </span>
+                </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Directly Affected Entities</CardTitle>
+              <CardDescription>Explicit operator selections and their current operational state</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {entityStates.length === 0 ? (
+                <p className="text-xs text-slate-400">No campus entities are explicitly attached to this incident.</p>
+              ) : (
+                entityStates.map((state) => (
+                  <div key={state.nodeId} className="flex flex-col sm:flex-row sm:items-start gap-2 border-b border-slate-800 pb-3 last:border-0 last:pb-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-slate-100">{state.nodeName}</p>
+                      <p className="text-[11px] text-slate-500 font-mono">{state.nodeType} · {state.nodeId}</p>
+                      <p className="text-xs text-slate-300 mt-1">{state.reason}</p>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Related active incidents: {state.relatedIncidentIds.length}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 border rounded px-2 py-1 text-[11px] uppercase font-semibold ${
+                      state.status === "operational"
+                        ? "border-emerald-800 text-emerald-300"
+                        : state.status === "degraded"
+                        ? "border-amber-800 text-amber-300"
+                        : "border-red-900 text-red-300"
+                    }`}>
+                      {state.status}
+                    </span>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
 

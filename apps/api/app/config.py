@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    development_auth_bypass: bool = Field(default=False, alias="EZYKWELEZ_DEV_AUTH_BYPASS")
     
     # CORS Configuration
     cors_origins_raw: str = Field(

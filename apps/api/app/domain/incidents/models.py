@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from app.domain.campus.models import DataMode
-from app.domain.graph.models import Criticality
+from app.domain.campus.models import DataMode, DEFAULT_CAMPUS_ID
+from app.domain.graph.models import Criticality, NodeStatus, NodeType
 from app.domain.impact.models import FailureType
 
 
@@ -20,10 +20,15 @@ class IncidentType(str, Enum):
     CAPACITY_ISSUE = "capacity_issue"
     MAINTENANCE = "maintenance"
     ENVIRONMENTAL = "environmental"
+    HVAC_ISSUE = "hvac_issue"
+    COMMUNICATIONS_OUTAGE = "communications_outage"
+    ACCESS_ISSUE = "access_issue"
+    OPERATIONAL = "operational"
     OTHER = "other"
 
 
 class IncidentSeverity(str, Enum):
+    INFO = "info"
     LOW = "low"
     MODERATE = "moderate"
     HIGH = "high"
@@ -38,6 +43,7 @@ class IncidentStatus(str, Enum):
     MITIGATED = "mitigated"
     RESOLVED = "resolved"
     CLOSED = "closed"
+    CANCELLED = "cancelled"
 
 
 class IncidentSource(str, Enum):
@@ -61,6 +67,8 @@ class IncidentUpdateType(str, Enum):
     MITIGATED = "mitigated"
     RESOLVED = "resolved"
     CLOSED = "closed"
+    AFFECTED_ENTITY_ADDED = "affected_entity_added"
+    CANCELLED = "cancelled"
 
 
 # ------------------------------------------------------------------------------
@@ -115,6 +123,7 @@ class IncidentUpdate:
 class Incident:
     """Authoritative Incident domain entity representing a campus disruption."""
     id: str
+    campus_id: str
     title: str
     description: str
     type: IncidentType
@@ -128,16 +137,22 @@ class Incident:
     acknowledged_at: Optional[str] = None
     resolved_at: Optional[str] = None
     closed_at: Optional[str] = None
+    cancelled_at: Optional[str] = None
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     data_mode: DataMode = DataMode.SIMULATED
     metadata: Dict[str, Any] = field(default_factory=dict)
+    estimated_duration_minutes: Optional[int] = None
 
     def __post_init__(self):
         if not self.id or not self.id.strip():
             raise ValueError("Incident id cannot be empty.")
         if not self.title or not self.title.strip():
             raise ValueError("Incident title cannot be empty.")
+        if not self.campus_id or not self.campus_id.strip():
+            raise ValueError("Incident campus_id cannot be empty.")
+        if self.estimated_duration_minutes is not None and self.estimated_duration_minutes <= 0:
+            raise ValueError("Estimated duration must be greater than 0 minutes.")
 
         # Invariant validations
         if self.resolved_at and self.started_at:
@@ -146,6 +161,31 @@ class Incident:
         if self.closed_at and self.resolved_at:
             if self.closed_at < self.resolved_at:
                 raise ValueError(f"closed_at ({self.closed_at}) cannot precede resolved_at ({self.resolved_at})")
+
+
+@dataclass(frozen=True)
+class IncidentAffectedEntity:
+    """An explicitly attached graph entity; no related nodes are inferred."""
+    incident_id: str
+    campus_id: str
+    node_id: str
+    reason: str
+    created_by: str = "system"
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+@dataclass(frozen=True)
+class EntityOperationalState:
+    """Current effective state of one graph entity from its direct incident links."""
+    campus_id: str
+    node_id: str
+    node_type: NodeType
+    node_name: str
+    status: NodeStatus
+    reason: str
+    related_incident_ids: List[str] = field(default_factory=list)
+    location_id: Optional[str] = None
+    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 @dataclass(frozen=True)

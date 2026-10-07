@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+DEFAULT_CAMPUS_ID = "c0000000-0000-0000-0000-000000000001"
+
 
 class EntityType(str, Enum):
     CAMPUS = "CAMPUS"
@@ -12,6 +14,7 @@ class EntityType(str, Enum):
     ZONE = "ZONE"
     ROOM = "ROOM"
     RESOURCE = "RESOURCE"
+    SERVICE = "SERVICE"
     CLASS_SESSION = "CLASS_SESSION"
     FACILITY = "FACILITY"
 

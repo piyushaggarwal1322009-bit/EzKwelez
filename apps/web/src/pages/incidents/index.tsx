@@ -38,6 +38,7 @@ export default function IncidentsPage() {
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
   const [locations, setLocations] = React.useState<CampusLocation[]>([]);
   const [nodes, setNodes] = React.useState<DependencyNode[]>([]);
+  const [affectedNodeIds, setAffectedNodeIds] = React.useState<string[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -59,6 +60,7 @@ export default function IncidentsPage() {
     locationId: "",
     rootNodeId: "",
     dataMode: DataMode.SIMULATED,
+    estimatedDurationMinutes: 90,
   });
 
   const fetchData = async () => {
@@ -86,11 +88,18 @@ export default function IncidentsPage() {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.title.trim() || !(createForm.description || "").trim()) return;
+    if (affectedNodeIds.length === 0) {
+      alert("Select at least one directly affected campus entity.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
+      const campusId = locations[0]?.campusId;
+      if (!campusId) throw new Error("No campus is available for incident creation.");
       const idempotencyKey = `idemp_web_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const created = await incidentService.createIncident(
+      const created = await incidentService.createCampusIncident(
+        campusId,
         {
           ...createForm,
           locationId: createForm.locationId || undefined,
@@ -98,8 +107,17 @@ export default function IncidentsPage() {
         },
         idempotencyKey
       );
+      await Promise.all(
+        affectedNodeIds.map((nodeId) =>
+          incidentService.addAffectedEntity(created.id, {
+            nodeId,
+            reason: createForm.description || created.title,
+          })
+        )
+      );
       setIncidents((prev) => [created, ...prev]);
       setIsCreateOpen(false);
+      setAffectedNodeIds([]);
       setCreateForm({
         title: "",
         description: "",
@@ -110,6 +128,7 @@ export default function IncidentsPage() {
         locationId: "",
         rootNodeId: "",
         dataMode: DataMode.SIMULATED,
+        estimatedDurationMinutes: 90,
       });
     } catch (err: any) {
       alert(`Incident creation failed: ${err.message}`);
@@ -171,7 +190,7 @@ export default function IncidentsPage() {
           {/* Status Filter */}
           <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-lg text-xs">
             <span className="text-[11px] text-slate-400 px-1">Status:</span>
-            {["all", "active", "investigating", "triaged", "resolved", "closed"].map((s) => (
+            {["all", "active", "investigating", "triaged", "resolved", "closed", "cancelled"].map((s) => (
               <button
                 key={s}
                 type="button"
@@ -188,7 +207,7 @@ export default function IncidentsPage() {
           {/* Severity Filter */}
           <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-lg text-xs">
             <span className="text-[11px] text-slate-400 px-1">Severity:</span>
-            {["all", "critical", "high", "moderate", "low"].map((sev) => (
+            {["all", "critical", "high", "moderate", "low", "info"].map((sev) => (
               <button
                 key={sev}
                 type="button"
@@ -414,6 +433,46 @@ export default function IncidentsPage() {
               </select>
             </div>
           </div>
+
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Estimated Duration (minutes)</label>
+            <input
+              type="number"
+              min={1}
+              value={createForm.estimatedDurationMinutes || ""}
+              onChange={(e) => setCreateForm({
+                ...createForm,
+                estimatedDurationMinutes: e.target.value ? Number(e.target.value) : undefined,
+              })}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <fieldset className="space-y-2">
+            <legend className="block text-slate-300 font-medium">Directly Affected Entities *</legend>
+            <p className="text-[11px] text-slate-500">
+              Only selected entities are marked; downstream effects are not inferred.
+            </p>
+            <div className="max-h-40 overflow-y-auto space-y-1 rounded border border-slate-800 bg-slate-950 p-2">
+              {nodes
+                .filter((node) => ["building", "room", "resource", "service"].includes(node.type))
+                .map((node) => (
+                  <label key={node.id} className="flex items-center gap-2 py-1 text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={affectedNodeIds.includes(node.id)}
+                      onChange={(event) => setAffectedNodeIds((current) =>
+                        event.target.checked
+                          ? [...current, node.id]
+                          : current.filter((id) => id !== node.id)
+                      )}
+                    />
+                    <span>{node.name}</span>
+                    <span className="ml-auto font-mono text-[10px] text-slate-500">{node.type}</span>
+                  </label>
+                ))}
+            </div>
+          </fieldset>
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-800">
             <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>
