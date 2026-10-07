@@ -19,6 +19,9 @@ class CampusRepository(ABC):
         pass
 
 
+CampusContextProvider = CampusRepository
+
+
 class OccupancyProvider(ABC):
     """Abstract port for acquiring live/simulated occupancy telemetry."""
 
