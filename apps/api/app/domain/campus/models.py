@@ -1,4 +1,4 @@
-"""Pure Domain Models for Campus Structure, Dependency Graphs, and Live Conditions.
+"""Campus domain entities, value objects, and authoritative business rules.
 
 Independent of HTTP, FastAPI, or persistence drivers.
 """
@@ -10,9 +10,38 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
-# ------------------------------------------------------------------------------
-# Enums
-# ------------------------------------------------------------------------------
+class EntityType(str, Enum):
+    CAMPUS = "CAMPUS"
+    BUILDING = "BUILDING"
+    ZONE = "ZONE"
+    ROOM = "ROOM"
+    RESOURCE = "RESOURCE"
+    CLASS_SESSION = "CLASS_SESSION"
+    FACILITY = "FACILITY"
+
+
+class DataMode(str, Enum):
+    LIVE = "live"
+    SIMULATED = "simulated"
+    ESTIMATED = "estimated"
+    UNKNOWN = "unknown"
+
+
+class OccupancyStatus(str, Enum):
+    LOW = "Low"
+    MODERATE = "Moderate"
+    BUSY = "Busy"
+    VERY_BUSY = "Very Busy"
+    OVER_CAPACITY = "Over Capacity"
+
+
+class ConnectivityQuality(str, Enum):
+    EXCELLENT = "Excellent"
+    GOOD = "Good"
+    FAIR = "Fair"
+    WEAK = "Weak"
+    VERY_WEAK = "Very Weak"
+
 
 class LocationType(str, Enum):
     ACADEMIC = "academic"
@@ -82,39 +111,6 @@ class CampusEntityType(str, Enum):
     RESOURCE = "resource"
     LOCATION = "location"
     SERVICE = "service"
-
-
-class EntityType(str, Enum):
-    CAMPUS = "CAMPUS"
-    BUILDING = "BUILDING"
-    ZONE = "ZONE"
-    ROOM = "ROOM"
-    RESOURCE = "RESOURCE"
-    CLASS_SESSION = "CLASS_SESSION"
-    FACILITY = "FACILITY"
-
-
-class DataMode(str, Enum):
-    LIVE = "live"
-    SIMULATED = "simulated"
-    ESTIMATED = "estimated"
-    UNKNOWN = "unknown"
-
-
-class OccupancyStatus(str, Enum):
-    LOW = "Low"
-    MODERATE = "Moderate"
-    BUSY = "Busy"
-    VERY_BUSY = "Very Busy"
-    OVER_CAPACITY = "Over Capacity"
-
-
-class ConnectivityQuality(str, Enum):
-    EXCELLENT = "Excellent"
-    GOOD = "Good"
-    FAIR = "Fair"
-    WEAK = "Weak"
-    VERY_WEAK = "Very Weak"
 
 
 # ------------------------------------------------------------------------------

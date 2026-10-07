@@ -31,12 +31,6 @@ export enum ResourceType {
   COMMUNICATION = "communication",
   TRANSPORT = "transport",
   EQUIPMENT = "equipment",
-  TECHNICIAN = "technician",
-  BACKUP_POWER = "backup_power",
-  BACKUP_NETWORK = "backup_network",
-  AVAILABLE_ROOM = "available_room",
-  STAFF = "staff",
-  TIME_WINDOW = "time_window",
   OTHER = "other",
 }
 
@@ -54,6 +48,13 @@ export enum ServiceType {
 }
 
 export enum DependencyType {
+  POWERED_BY = "POWERED_BY",
+  NETWORKED_BY = "NETWORKED_BY",
+  LOCATED_IN = "LOCATED_IN",
+  OCCUPIES = "OCCUPIES",
+  REQUIRES_RESOURCE = "REQUIRES_RESOURCE",
+  SERVES = "SERVES",
+  BACKUP_FOR = "BACKUP_FOR",
   POWER = "power",
   NETWORK = "network",
   WATER = "water",
@@ -384,7 +385,7 @@ export enum ConstraintSeverity {
 /**
  * Operational resource types
  */
-export enum OperationalResourceType {
+export enum RecoveryResourceType {
   TECHNICIAN = "technician",
   BACKUP_POWER = "backup_power",
   BACKUP_NETWORK = "backup_network",
