@@ -3,6 +3,89 @@
  * Shared across frontend and backend boundaries
  */
 
+export enum UserRole {
+  STUDENT = "student",
+  STAFF = "staff",
+  ADMIN = "admin",
+}
+
+export enum LocationType {
+  ACADEMIC = "academic",
+  LIBRARY = "library",
+  CANTEEN = "canteen",
+  HOSTEL = "hostel",
+  ADMINISTRATION = "administration",
+  LABORATORY = "laboratory",
+  SPORTS = "sports",
+  ENTRANCE = "entrance",
+  COMMON_AREA = "common_area",
+  OTHER = "other",
+}
+
+export enum ResourceType {
+  POWER = "power",
+  NETWORK = "network",
+  WATER = "water",
+  HVAC = "hvac",
+  SECURITY = "security",
+  COMMUNICATION = "communication",
+  TRANSPORT = "transport",
+  EQUIPMENT = "equipment",
+  OTHER = "other",
+}
+
+export enum ServiceType {
+  NETWORK = "network",
+  ACADEMIC = "academic",
+  FOOD = "food",
+  SECURITY = "security",
+  ACCESS = "access",
+  WATER = "water",
+  POWER = "power",
+  COMMUNICATION = "communication",
+  ADMINISTRATION = "administration",
+  OTHER = "other",
+}
+
+export enum DependencyType {
+  POWERED_BY = "POWERED_BY",
+  NETWORKED_BY = "NETWORKED_BY",
+  LOCATED_IN = "LOCATED_IN",
+  OCCUPIES = "OCCUPIES",
+  REQUIRES_RESOURCE = "REQUIRES_RESOURCE",
+  SERVES = "SERVES",
+  BACKUP_FOR = "BACKUP_FOR",
+  POWER = "power",
+  NETWORK = "network",
+  WATER = "water",
+  HVAC = "hvac",
+  SECURITY = "security",
+  COMMUNICATION = "communication",
+  ACCESS = "access",
+  OPERATIONAL = "operational",
+  OTHER = "other",
+}
+
+export enum DependencyStrength {
+  REQUIRED = "required",
+  CRITICAL = "critical",
+  IMPORTANT = "important",
+  OPTIONAL = "optional",
+}
+
+export enum StructuralStatus {
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+  MAINTENANCE = "maintenance",
+  UNKNOWN = "unknown",
+}
+
+export enum CampusEntityType {
+  RESOURCE = "resource",
+  LOCATION = "location",
+  SERVICE = "service",
+}
+
 export enum IncidentSeverity {
   INFO = "info",
   LOW = "low",
@@ -159,7 +242,7 @@ export enum RelationshipType {
 /**
  * Historical/Compatibility Dependency Type Enum
  */
-export enum DependencyType {
+export enum LegacyDependencyType {
   POWERED_BY = "POWERED_BY",
   NETWORKED_BY = "NETWORKED_BY",
   LOCATED_IN = "LOCATED_IN",
@@ -313,7 +396,7 @@ export enum ConstraintSeverity {
 /**
  * Operational resource types
  */
-export enum ResourceType {
+export enum RecoveryResourceType {
   TECHNICIAN = "technician",
   BACKUP_POWER = "backup_power",
   BACKUP_NETWORK = "backup_network",

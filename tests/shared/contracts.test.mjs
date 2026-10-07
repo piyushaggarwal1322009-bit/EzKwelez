@@ -14,6 +14,16 @@ import {
   classifyConnectivity,
   OCCUPANCY_THRESHOLDS,
   CONNECTIVITY_THRESHOLDS,
+  NodeType,
+  RelationshipType,
+  FailureType,
+  ImpactType,
+  ImpactSeverity,
+  PlanStatus,
+  RecoveryOptionType,
+  Feasibility,
+  PlanningObjectiveType,
+  ResourceType,
 } from "../../packages/shared/dist/index.js";
 
 console.log("Running @ezykwelez/shared Contract & Business Rule Tests...");
@@ -55,7 +65,7 @@ assert.equal(DependencyType.LOCATED_IN, "LOCATED_IN");
 assert.equal(DependencyType.REQUIRES_RESOURCE, "REQUIRES_RESOURCE");
 assert.equal(DependencyCriticality.CRITICAL, "CRITICAL");
 
-// 4. Test Phase 5 Incident Enums
+// 4. Test Phase 7 Incident Enums
 assert.equal(IncidentType.POWER_OUTAGE, "power_outage");
 assert.equal(IncidentType.NETWORK_OUTAGE, "network_outage");
 assert.equal(IncidentSeverity.CRITICAL, "critical");
@@ -66,6 +76,29 @@ assert.equal(IncidentStatus.RESOLVED, "resolved");
 assert.equal(IncidentSource.MANUAL, "manual");
 assert.equal(IncidentSource.SENSOR, "sensor");
 assert.equal(IncidentUpdateType.STATUS_CHANGED, "status_changed");
-console.log("✓ Phase 5 Incident enums and lifecycle types validated successfully.");
+console.log("✓ Phase 7 Incident enums and lifecycle types validated successfully.");
+
+// 5. Test Phase 8 Graph and Impact Enums
+assert.equal(NodeType.INFRASTRUCTURE, "infrastructure");
+assert.equal(NodeType.UTILITY, "utility");
+assert.equal(NodeType.NETWORK, "network");
+assert.equal(RelationshipType.DEPENDS_ON, "depends_on");
+assert.equal(RelationshipType.FEEDS, "feeds");
+assert.equal(FailureType.OUTAGE, "outage");
+assert.equal(ImpactType.DIRECT, "direct");
+assert.equal(ImpactType.INDIRECT, "indirect");
+assert.equal(ImpactSeverity.CRITICAL, "critical");
+console.log("✓ Phase 8 Dependency Graph and Impact Analysis enums validated successfully.");
+
+// 6. Test Phase 9 Recovery Enums
+assert.equal(PlanStatus.APPROVED, "approved");
+assert.equal(PlanStatus.DRAFT, "draft");
+assert.equal(RecoveryOptionType.FAILOVER, "failover");
+assert.equal(RecoveryOptionType.RELOCATE, "relocate");
+assert.equal(Feasibility.FEASIBLE, "feasible");
+assert.equal(Feasibility.CONDITIONALLY_FEASIBLE, "conditionally_feasible");
+assert.equal(PlanningObjectiveType.MINIMIZE_STUDENT_DISRUPTION, "minimize_student_disruption");
+assert.equal(ResourceType.BACKUP_POWER, "backup_power");
+console.log("✓ Phase 9 Recovery Planning & Decision Support enums validated successfully.");
 
 console.log("\nAll @ezykwelez/shared tests passed successfully!");

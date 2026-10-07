@@ -4,6 +4,7 @@
  */
 
 import {
+  UserRole,
   IncidentSeverity,
   IncidentStatus,
   IncidentType,
@@ -30,16 +31,30 @@ import {
   ConstraintType,
   ConstraintSeverity,
   ResourceType,
+  RecoveryResourceType,
   PlanningObjectiveType,
   PlanningObjectivePriority,
   TradeoffDirection,
   AssumptionStatus,
 } from "../enums";
 
+export interface UserProfile {
+  id: string;
+  fullName: string | null;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateProfileDTO {
+  fullName?: string | null;
+}
+
 export interface HealthCheckResponse {
   status: string;
   service: string;
   version?: string;
+  environment?: string;
   timestamp?: string;
 }
 
@@ -395,7 +410,7 @@ export interface ImpactReduction {
 }
 
 export interface ResourceRequirement {
-  resourceType: ResourceType;
+  resourceType: RecoveryResourceType;
   quantity: number;
   availability: string;
   location?: string;
@@ -501,4 +516,3 @@ export interface RecoveryPlanReviewRequest {
   reviewedBy: string;
   reviewNotes?: string;
 }
-

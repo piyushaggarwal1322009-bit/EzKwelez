@@ -10,11 +10,15 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Alert } from "@/components/ui/alert";
+import { DataProvenanceBadge } from "@/components/ui/data-provenance-badge";
 import { impactService } from "@/services/impact-service";
 import { graphService } from "@/services/graph-service";
 import { incidentService } from "@/services/incident-service";
+import { InteractiveDependencyGraph } from "@/components/graph";
 import {
   Criticality,
+  DataMode,
+  DependencyEdge,
   DependencyNode,
   FailureType,
   ImpactReport,
@@ -42,6 +46,7 @@ export default function ImpactAnalysisPage() {
   const { rootNodeId: initialRootId, incidentId } = router.query;
 
   const [nodes, setNodes] = React.useState<DependencyNode[]>([]);
+  const [edges, setEdges] = React.useState<DependencyEdge[]>([]);
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
   const [selectedRootId, setSelectedRootId] = React.useState<string>("");
   const [failureType, setFailureType] = React.useState<FailureType>(FailureType.OUTAGE);
@@ -52,22 +57,33 @@ export default function ImpactAnalysisPage() {
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Load available nodes and incidents
+  // Load available topology and incidents
   React.useEffect(() => {
-    Promise.all([graphService.listNodes(), incidentService.listIncidents()]).then(
-      ([nodesRes, incidentsRes]) => {
-        setNodes(nodesRes);
+    Promise.all([graphService.getTopology(), incidentService.listIncidents()]).then(
+      ([topoRes, incidentsRes]) => {
+        const nodeList = Object.values(topoRes.nodes);
+        setNodes(nodeList);
+        setEdges(topoRes.edges);
         setIncidents(incidentsRes);
+
+        // Find active incident if incidentId is provided
+        const matchingIncident = incidentsRes.find((i) => i.id === incidentId);
 
         const defaultId =
           (initialRootId as string) ||
-          (incidentsRes.find((i) => i.rootNodeId)?.rootNodeId) ||
-          (nodesRes.length > 0 ? nodesRes[0].id : "");
+          matchingIncident?.rootNodeId ||
+          incidentsRes.find((i) => i.rootNodeId)?.rootNodeId ||
+          (nodeList.length > 0 ? nodeList[0].id : "");
 
         setSelectedRootId(defaultId);
       }
     );
-  }, [initialRootId]);
+  }, [initialRootId, incidentId]);
+
+  const currentIncident = React.useMemo(() => {
+    if (!incidentId || incidents.length === 0) return null;
+    return incidents.find((i) => i.id === incidentId) || null;
+  }, [incidentId, incidents]);
 
   const handleRunAnalysis = React.useCallback(async (rootId: string) => {
     if (!rootId) return;
@@ -103,23 +119,65 @@ export default function ImpactAnalysisPage() {
     <AppLayout
       title="Downstream Impact Analysis & Blast Radius"
       description="Deterministic multi-hop BFS dependency traversal calculating cascading facility and academic disruption."
+      dataMode={report?.dataMode || DataMode.SIMULATED}
     >
       <PageHeader
         title="Downstream Impact & Blast Radius"
         description="Analyzes failure propagation pathways across infrastructure, rooms, and academic sessions starting from a root system fault."
         breadcrumbs={[{ label: "Impact Analysis" }]}
+        badge={<DataProvenanceBadge mode={report?.dataMode || DataMode.SIMULATED} />}
         actions={
           <div className="flex items-center gap-2">
             {report && (
               <Link href={`/recovery?impactId=${report.analysisId}${incidentId ? `&incidentId=${incidentId}` : ""}`}>
                 <Button variant="primary" size="sm" className="gap-1.5 text-xs shadow-sm">
-                  <Sparkles className="w-3.5 h-3.5" /> Generate Recovery Plan
+                  <Sparkles className="w-3.5 h-3.5" /> Compare Recovery Plans
                 </Button>
               </Link>
             )}
           </div>
         }
       />
+
+      {/* Incident Origin Context Banner (Part 10: Incident -> Impact Handoff) */}
+      {currentIncident && (
+        <div className="mb-6 p-3.5 rounded-xl border border-cyan-800/80 bg-cyan-950/40 flex items-center justify-between flex-wrap gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-cyan-900/60 border border-cyan-700/60">
+              <AlertOctagon className="w-4 h-4 text-cyan-300" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-white flex items-center gap-2">
+                <span>Active Incident Context:</span>
+                <span className="text-cyan-300">{currentIncident.title}</span>
+                <Badge
+                  variant={currentIncident.severity === "critical" ? "critical" : "warning"}
+                  size="sm"
+                  className="uppercase"
+                >
+                  {currentIncident.severity}
+                </Badge>
+              </div>
+              <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                Incident ID: {currentIncident.id} • Root Node: {currentIncident.rootNodeId || "None"}
+              </div>
+            </div>
+          </div>
+          <Link href={`/incidents/${currentIncident.id}`}>
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 border-slate-700">
+              &larr; Return to Incident
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Honest Demo / Offline Fallback Notice */}
+      {report?.dataMode === DataMode.SIMULATED && (
+        <Alert variant="info" title="Offline Demo Blast Radius" className="mb-6">
+          Live FastAPI backend connection offline — displaying simulated blast radius calculation.
+          Propagation paths, disrupted nodes, and affected academic cohorts remain fully interactive.
+        </Alert>
+      )}
 
       {/* Control Panel: Select Root Node & Policy Config */}
       <Card className="mb-6 border-slate-800 bg-slate-900/60">
@@ -135,7 +193,7 @@ export default function ImpactAnalysisPage() {
               <select
                 value={selectedRootId}
                 onChange={(e) => setSelectedRootId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
               >
                 {nodes.map((node) => (
                   <option key={node.id} value={node.id}>
@@ -151,7 +209,7 @@ export default function ImpactAnalysisPage() {
               <select
                 value={failureType}
                 onChange={(e) => setFailureType(e.target.value as FailureType)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 capitalize"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500 capitalize"
               >
                 {Object.values(FailureType).map((t) => (
                   <option key={t} value={t}>
@@ -167,7 +225,7 @@ export default function ImpactAnalysisPage() {
               <select
                 value={severity}
                 onChange={(e) => setSeverity(e.target.value as Criticality)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 uppercase"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500 uppercase"
               >
                 {Object.values(Criticality).map((s) => (
                   <option key={s} value={s}>
@@ -202,7 +260,7 @@ export default function ImpactAnalysisPage() {
       ) : isAnalyzing ? (
         <div className="space-y-4">
           <Skeleton className="h-28 w-full" />
-          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-[480px] w-full" />
         </div>
       ) : !report ? (
         <div className="text-center py-12 text-slate-500">Select a root node to compute blast radius.</div>
@@ -246,6 +304,33 @@ export default function ImpactAnalysisPage() {
             />
           </div>
 
+          {/* INTERACTIVE BLAST RADIUS CANVAS (Part 8: Impact Visualization) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center gap-2">
+                <GitFork className="w-4 h-4 text-rose-400" />
+                <span className="font-semibold text-slate-200 uppercase tracking-wider text-[11px]">
+                  Cascading Disruption Blast Radius Map
+                </span>
+                <span className="text-slate-500">•</span>
+                <span className="font-mono text-[11px] text-rose-400">
+                  Origin: {report.rootNode.name} &rarr; {report.impactedNodes.length} Cascading Vertices
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500 hidden sm:inline">
+                Ordered hierarchically from root origin through cascade hops
+              </span>
+            </div>
+
+            <InteractiveDependencyGraph
+              nodes={nodes}
+              edges={edges}
+              impactReport={report}
+              selectedNodeId={report.rootNode.id}
+              height={480}
+            />
+          </div>
+
           {/* Traversal Warnings if any */}
           {report.warnings && report.warnings.length > 0 && (
             <Alert variant="warning" title="Graph Traversal Notices">
@@ -258,7 +343,7 @@ export default function ImpactAnalysisPage() {
           )}
 
           {/* Downstream Impact Cascading Pathway Table */}
-          <Card>
+          <Card className="border-slate-800 bg-slate-900/70">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Downstream Blast Radius Hierarchy</CardTitle>
@@ -337,6 +422,24 @@ export default function ImpactAnalysisPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Flagship Next Action: Compare Recovery Plans (Part 11: Impact -> Recovery Handoff) */}
+          <div className="p-5 rounded-xl border border-cyan-800/60 bg-gradient-to-r from-slate-900 via-cyan-950/30 to-slate-900 flex items-center justify-between flex-wrap gap-4 shadow-xl">
+            <div>
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                Blast Radius Computed — Ready for Operational Recovery Action
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Hand off calculated blast radius impacts ({report.impactedNodes.length} disrupted systems, {report.impactedLocations.length} locations) to generate and compare operational recovery strategies.
+              </p>
+            </div>
+            <Link href={`/recovery?impactId=${report.analysisId}${incidentId ? `&incidentId=${incidentId}` : ""}`}>
+              <Button variant="primary" size="lg" className="gap-2 text-xs shadow-md">
+                Compare Recovery Plans &rarr;
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </AppLayout>

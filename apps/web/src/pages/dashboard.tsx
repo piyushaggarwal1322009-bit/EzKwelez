@@ -10,6 +10,7 @@ import { StatusIndicator } from "@/components/ui/status-indicator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { StaleDataBanner } from "@/components/ui/stale-data-banner";
+import { Alert } from "@/components/ui/alert";
 import { campusService, CampusConditionsResponse } from "@/services/campus-service";
 import { incidentService } from "@/services/incident-service";
 import {
@@ -78,12 +79,19 @@ export default function DashboardPage() {
     ? "attention"
     : "operational";
 
+  const isSimulated =
+    Boolean(conditionsData?.isFallback) ||
+    conditionsData?.dataMode === DataMode.SIMULATED ||
+    conditionsData?.dataMode === "simulated";
+
+  const activeDataMode = isSimulated ? DataMode.SIMULATED : DataMode.LIVE;
+
   return (
     <AppLayout
       title="Operational Command Center"
       description="Real-time campus occupancy, connectivity health, active incident blast radius, and decision support."
       campusStatus={campusStatus}
-      dataMode={conditionsData?.dataMode as DataMode || DataMode.SIMULATED}
+      dataMode={activeDataMode}
       onRefresh={handleRefresh}
       isRefreshing={isRefreshing}
       lastRefreshed={lastRefreshed}
@@ -112,7 +120,15 @@ export default function DashboardPage() {
       {/* Stale Telemetry Warning Banner */}
       <StaleDataBanner lastUpdated={lastRefreshed} thresholdMinutes={15} className="mb-6" />
 
-      {error ? (
+      {/* Honest Demo / Offline Fallback Banner */}
+      {conditionsData?.isFallback && (
+        <Alert variant="info" title="Offline Demo Mode Active" className="mb-6">
+          Live FastAPI backend connection offline — showing simulated campus conditions and active disruption data.
+          All decision support workflows and navigation remain fully operational.
+        </Alert>
+      )}
+
+      {error && !conditionsData ? (
         <ErrorState
           title="Backend Connection Offline"
           message={error}
@@ -246,16 +262,18 @@ export default function DashboardPage() {
                 </Card>
               )}
 
-              {/* Campus Facilities Overview Grid */}
+              {/* Campus Facilities Overview Grid with Attention Focus */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-3">
                   <div>
-                    <CardTitle>Live Facility Conditions</CardTitle>
-                    <CardDescription>Real-time occupancy and Wi-Fi signal quality</CardDescription>
+                    <CardTitle>Campus Intelligence Snapshot</CardTitle>
+                    <CardDescription>
+                      Facilities needing operational attention, high capacity loads, and network signals
+                    </CardDescription>
                   </div>
                   <Link href="/campus">
-                    <Button variant="ghost" size="sm" className="gap-1 text-xs text-blue-400 hover:text-blue-300">
-                      View All <ArrowRight className="w-3.5 h-3.5" />
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs text-blue-400 hover:text-blue-300 border-blue-900/60 bg-blue-950/20">
+                      View Campus Intelligence <ArrowRight className="w-3.5 h-3.5" />
                     </Button>
                   </Link>
                 </CardHeader>

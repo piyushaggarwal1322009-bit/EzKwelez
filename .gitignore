@@ -9,6 +9,7 @@ node_modules/
 out/
 build/
 dist/
+*.tsbuildinfo
 *.egg-info/
 .eggs/
 
@@ -64,3 +65,6 @@ pnpm-debug.log*
 
 # Supabase local
 .supabase/
+
+# Vercel
+.vercel/
