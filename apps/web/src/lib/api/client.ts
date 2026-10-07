@@ -1,18 +1,13 @@
-import { HealthCheckResponse } from "@ezykwelez/shared";
+/**
+ * API Client Adapter for lib/api
+ * Delegates to the central @/services/api-client to prevent duplicate fetch implementations.
+ */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { HealthCheckResponse } from "@ezykwelez/shared";
+import { apiClient } from "@/services/api-client";
 
 export async function checkApiHealth(): Promise<HealthCheckResponse> {
-  const response = await fetch(`${API_BASE_URL}/health`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Health check failed with status: ${response.status}`);
-  }
-
-  return response.json();
+  return apiClient.get<HealthCheckResponse>("/health");
 }
+
+export { apiClient } from "@/services/api-client";

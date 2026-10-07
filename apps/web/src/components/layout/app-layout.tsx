@@ -31,7 +31,7 @@ export function AppLayout({
   return (
     <>
       <Head>
-        <title>{title} | EzyKwelez</title>
+        <title>{`${title} | EzyKwelez`}</title>
         <meta name="description" content={description} />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>

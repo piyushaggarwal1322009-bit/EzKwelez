@@ -6,6 +6,7 @@ import {
   Activity,
   AlertOctagon,
   Building2,
+  Compass,
   GitFork,
   LayoutDashboard,
   Radio,
@@ -25,6 +26,11 @@ export interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  {
+    title: "Overview",
+    href: "/",
+    icon: Compass,
+  },
   {
     title: "Dashboard",
     href: "/dashboard",
@@ -86,7 +92,10 @@ export function Sidebar({
       )}
     >
       {/* Brand Header */}
-      <div className="flex items-center gap-3 h-16 px-6 border-b border-slate-800/80">
+      <Link
+        href="/"
+        className="flex items-center gap-3 h-16 px-6 border-b border-slate-800/80 hover:bg-slate-900/60 transition-colors"
+      >
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 shadow-sm text-white font-black text-sm">
           <Zap className="w-5 h-5 fill-current text-white" />
         </div>
@@ -96,7 +105,7 @@ export function Sidebar({
             Continuity Engine
           </span>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation section */}
       <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
@@ -106,8 +115,10 @@ export function Sidebar({
 
         {NAV_ITEMS.map((item) => {
           const isActive =
-            router.pathname === item.href ||
-            (item.href !== "/dashboard" && router.pathname.startsWith(item.href));
+            item.href === "/"
+              ? router.pathname === "/"
+              : router.pathname === item.href ||
+                (item.href !== "/dashboard" && router.pathname.startsWith(item.href));
           const IconComp = item.icon;
 
           return (
