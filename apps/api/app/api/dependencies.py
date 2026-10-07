@@ -42,3 +42,15 @@ async def get_optional_current_user(
         return verify_supabase_token(authorization)
     except ValueError:
         return None
+
+
+async def require_admin_or_staff(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> AuthenticatedUser:
+    """Dependency restricting mutation operations to staff or admin roles."""
+    if current_user.role not in ("admin", "staff"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Administrative or staff privileges are required to perform this action.",
+        )
+    return current_user
