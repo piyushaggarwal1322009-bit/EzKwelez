@@ -10,11 +10,13 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Alert } from "@/components/ui/alert";
+import { DataProvenanceBadge } from "@/components/ui/data-provenance-badge";
 import { impactService } from "@/services/impact-service";
 import { graphService } from "@/services/graph-service";
 import { incidentService } from "@/services/incident-service";
 import {
   Criticality,
+  DataMode,
   DependencyNode,
   FailureType,
   ImpactReport,
@@ -103,11 +105,13 @@ export default function ImpactAnalysisPage() {
     <AppLayout
       title="Downstream Impact Analysis & Blast Radius"
       description="Deterministic multi-hop BFS dependency traversal calculating cascading facility and academic disruption."
+      dataMode={report?.dataMode || DataMode.SIMULATED}
     >
       <PageHeader
         title="Downstream Impact & Blast Radius"
         description="Analyzes failure propagation pathways across infrastructure, rooms, and academic sessions starting from a root system fault."
         breadcrumbs={[{ label: "Impact Analysis" }]}
+        badge={<DataProvenanceBadge mode={report?.dataMode || DataMode.SIMULATED} />}
         actions={
           <div className="flex items-center gap-2">
             {report && (
@@ -120,6 +124,14 @@ export default function ImpactAnalysisPage() {
           </div>
         }
       />
+
+      {/* Honest Demo / Offline Fallback Notice */}
+      {report?.dataMode === DataMode.SIMULATED && (
+        <Alert variant="info" title="Offline Demo Blast Radius" className="mb-6">
+          Live FastAPI backend connection offline — displaying simulated blast radius calculation.
+          Propagation paths, disrupted nodes, and affected academic cohorts remain fully interactive.
+        </Alert>
+      )}
 
       {/* Control Panel: Select Root Node & Policy Config */}
       <Card className="mb-6 border-slate-800 bg-slate-900/60">

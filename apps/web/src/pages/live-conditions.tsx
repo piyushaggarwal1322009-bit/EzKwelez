@@ -1,22 +1,26 @@
 import * as React from "react";
-import { AppLayout } from "@/components/layout/app-layout";
-import { PageHeader } from "@/components/layout/page-header";
-import { LiveCampusConditions } from "@/features/tanisha";
-import { APP_NAME, DataMode } from "@ezykwelez/shared";
+import { useRouter } from "next/router";
+import Head from "next/head";
 
-export default function LiveCampusPage() {
+/**
+ * Compatibility Route for /live-conditions
+ * Deprecated in Phase 2 in favor of canonical /campus
+ */
+export default function DeprecatedLiveConditionsPage() {
+  const router = useRouter();
+
+  React.useEffect(() => {
+    router.replace("/campus");
+  }, [router]);
+
   return (
-    <AppLayout
-      title={`Live Campus Conditions — ${APP_NAME}`}
-      description="Live Campus Conditions, occupancy metrics, signal telemetry, and operational rankings."
-      dataMode={DataMode.SIMULATED}
-    >
-      <PageHeader
-        title="Live Conditions Feed"
-        description="Comprehensive real-time telemetry feed across campus facilities."
-        breadcrumbs={[{ label: "Live Conditions" }]}
-      />
-      <LiveCampusConditions />
-    </AppLayout>
+    <>
+      <Head>
+        <title>Redirecting to Campus Intelligence...</title>
+      </Head>
+      <div className="min-h-screen bg-slate-950 text-slate-400 flex items-center justify-center p-4 font-mono">
+        <p className="text-xs">Redirecting to canonical /campus...</p>
+      </div>
+    </>
   );
 }

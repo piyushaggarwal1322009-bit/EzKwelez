@@ -1,17 +1,132 @@
 import { apiClient } from "./api-client";
-import { DependencyEdge, DependencyGraph, DependencyNode } from "@ezykwelez/shared";
+import {
+  Criticality,
+  DependencyEdge,
+  DependencyGraph,
+  DependencyNode,
+  NodeStatus,
+  NodeType,
+  RelationshipType,
+} from "@ezykwelez/shared";
+
+const MOCK_TOPOLOGY_NODES: Record<string, DependencyNode> = {
+  "n0000000-0000-0000-0000-000000000001": {
+    id: "n0000000-0000-0000-0000-000000000001",
+    type: NodeType.UTILITY,
+    name: "Main Power Substation Grid B",
+    status: NodeStatus.FAILED,
+    criticality: Criticality.CRITICAL,
+    locationId: "b0000000-0000-0000-0000-000000000002",
+    createdAt: "2026-10-07T00:00:00Z",
+  },
+  "n0000000-0000-0000-0000-000000000002": {
+    id: "n0000000-0000-0000-0000-000000000002",
+    type: NodeType.BUILDING,
+    name: "Ramanujan Block B Physical Structure",
+    status: NodeStatus.DEGRADED,
+    criticality: Criticality.HIGH,
+    locationId: "b0000000-0000-0000-0000-000000000002",
+    createdAt: "2026-10-07T00:00:00Z",
+  },
+  "n0000000-0000-0000-0000-000000000003": {
+    id: "n0000000-0000-0000-0000-000000000003",
+    type: NodeType.INFRASTRUCTURE,
+    name: "Block B HVAC Primary Chiller Unit",
+    status: NodeStatus.FAILED,
+    criticality: Criticality.HIGH,
+    locationId: "b0000000-0000-0000-0000-000000000002",
+    createdAt: "2026-10-07T00:00:00Z",
+  },
+  "n0000000-0000-0000-0000-000000000005": {
+    id: "n0000000-0000-0000-0000-000000000005",
+    type: NodeType.RESOURCE,
+    name: "Optics Laser Spectrometer Rig B201",
+    status: NodeStatus.FAILED,
+    criticality: Criticality.CRITICAL,
+    locationId: "r0000000-0000-0000-0000-000000000003",
+    createdAt: "2026-10-07T00:00:00Z",
+  },
+  "n0000000-0000-0000-0000-000000000006": {
+    id: "n0000000-0000-0000-0000-000000000006",
+    type: NodeType.OPERATION,
+    name: "PHYS-101 Freshman Physics Practicum",
+    status: NodeStatus.DEGRADED,
+    criticality: Criticality.MEDIUM,
+    locationId: "r0000000-0000-0000-0000-000000000003",
+    createdAt: "2026-10-07T00:00:00Z",
+  },
+  "n0000000-0000-0000-0000-000000000007": {
+    id: "n0000000-0000-0000-0000-000000000007",
+    type: NodeType.ROOM,
+    name: "Multi-Purpose Seminar Hall C204",
+    status: NodeStatus.OPERATIONAL,
+    criticality: Criticality.LOW,
+    locationId: "r0000000-0000-0000-0000-000000000009",
+    createdAt: "2026-10-07T00:00:00Z",
+  },
+};
+
+const MOCK_TOPOLOGY_EDGES: DependencyEdge[] = [
+  {
+    id: "e-01",
+    sourceNodeId: "n0000000-0000-0000-0000-000000000001",
+    targetNodeId: "n0000000-0000-0000-0000-000000000002",
+    relationship: RelationshipType.FEEDS,
+    criticality: Criticality.CRITICAL,
+    weight: 1.0,
+  },
+  {
+    id: "e-02",
+    sourceNodeId: "n0000000-0000-0000-0000-000000000002",
+    targetNodeId: "n0000000-0000-0000-0000-000000000003",
+    relationship: RelationshipType.HOSTS,
+    criticality: Criticality.HIGH,
+    weight: 1.0,
+  },
+  {
+    id: "e-03",
+    sourceNodeId: "n0000000-0000-0000-0000-000000000002",
+    targetNodeId: "n0000000-0000-0000-0000-000000000005",
+    relationship: RelationshipType.FEEDS,
+    criticality: Criticality.CRITICAL,
+    weight: 1.0,
+  },
+  {
+    id: "e-04",
+    sourceNodeId: "n0000000-0000-0000-0000-000000000005",
+    targetNodeId: "n0000000-0000-0000-0000-000000000006",
+    relationship: RelationshipType.FEEDS,
+    criticality: Criticality.HIGH,
+    weight: 1.0,
+  },
+];
 
 export const graphService = {
   async getTopology(): Promise<DependencyGraph> {
-    return apiClient.get<DependencyGraph>("/graph/topology");
+    try {
+      return await apiClient.get<DependencyGraph>("/graph/topology");
+    } catch {
+      return {
+        nodes: MOCK_TOPOLOGY_NODES,
+        edges: MOCK_TOPOLOGY_EDGES,
+      };
+    }
   },
 
   async listNodes(): Promise<DependencyNode[]> {
-    return apiClient.get<DependencyNode[]>("/graph/nodes");
+    try {
+      return await apiClient.get<DependencyNode[]>("/graph/nodes");
+    } catch {
+      return Object.values(MOCK_TOPOLOGY_NODES);
+    }
   },
 
   async getNode(id: string): Promise<DependencyNode> {
-    return apiClient.get<DependencyNode>(`/graph/nodes/${id}`);
+    try {
+      return await apiClient.get<DependencyNode>(`/graph/nodes/${id}`);
+    } catch {
+      return MOCK_TOPOLOGY_NODES[id] || Object.values(MOCK_TOPOLOGY_NODES)[0];
+    }
   },
 
   async listEdges(nodeId?: string, direction?: "incoming" | "outgoing"): Promise<DependencyEdge[]> {
@@ -20,6 +135,21 @@ export const graphService = {
     if (direction) query.set("direction", direction);
 
     const qs = query.toString();
-    return apiClient.get<DependencyEdge[]>(`/graph/edges${qs ? `?${qs}` : ""}`);
+    try {
+      return await apiClient.get<DependencyEdge[]>(`/graph/edges${qs ? `?${qs}` : ""}`);
+    } catch {
+      let filtered = [...MOCK_TOPOLOGY_EDGES];
+      if (nodeId) {
+        if (direction === "incoming") {
+          filtered = filtered.filter((e) => e.targetNodeId === nodeId);
+        } else if (direction === "outgoing") {
+          filtered = filtered.filter((e) => e.sourceNodeId === nodeId);
+        } else {
+          filtered = filtered.filter((e) => e.sourceNodeId === nodeId || e.targetNodeId === nodeId);
+        }
+      }
+      return filtered;
+    }
   },
 };
+
