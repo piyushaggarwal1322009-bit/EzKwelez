@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { checkApiHealth } from "@/lib/api/client";
+import { API_BASE_URL } from "@/lib/config";
 import {
   Activity,
   CheckCircle2,
@@ -100,7 +101,7 @@ export default function SettingsPage() {
               <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1">
                 <span className="text-[10px] text-slate-500 uppercase block">API Base URL</span>
                 <span className="font-mono text-slate-300 truncate block">
-                  {process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}
+                  {API_BASE_URL}
                 </span>
               </div>
             </div>

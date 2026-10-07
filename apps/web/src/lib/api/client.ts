@@ -1,6 +1,5 @@
 import { HealthCheckResponse } from "@ezykwelez/shared";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { API_BASE_URL } from "../config";
 
 export async function checkApiHealth(): Promise<HealthCheckResponse> {
   const response = await fetch(`${API_BASE_URL}/health`, {
