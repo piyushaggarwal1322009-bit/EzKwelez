@@ -19,12 +19,16 @@ COMMENT ON COLUMN public.profiles.role IS 'User authorization role (student, sta
 
 -- Set up updated_at trigger function
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     NEW.updated_at = timezone('utc'::text, now());
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Trigger to update updated_at on profile changes
 DROP TRIGGER IF EXISTS on_profiles_updated ON public.profiles;
@@ -35,17 +39,26 @@ CREATE TRIGGER on_profiles_updated
 
 -- Trigger function to automatically create a profile entry when a new user signs up in auth.users
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     INSERT INTO public.profiles (id, full_name, role)
     VALUES (
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
         COALESCE(NEW.raw_user_meta_data->>'role', 'student')
-    );
+    )
+    ON CONFLICT (id) DO UPDATE
+    SET
+        full_name = EXCLUDED.full_name,
+        role = EXCLUDED.role,
+        updated_at = timezone('utc'::text, now());
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Trigger on auth.users after insert
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -72,7 +85,7 @@ CREATE POLICY "profiles_update_own"
     USING (auth.uid() = id)
     WITH CHECK (auth.uid() = id);
 
--- RLS Policy: Service role or trigger / user insert allowed for matching UUID
+-- RLS Policy: User insert allowed for matching UUID
 CREATE POLICY "profiles_insert_own"
     ON public.profiles
     FOR INSERT
