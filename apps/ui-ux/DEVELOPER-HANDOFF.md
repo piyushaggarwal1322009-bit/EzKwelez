@@ -247,12 +247,35 @@ Every component developed by the frontend team must implement all 5 mandatory st
 
 ---
 
-## 6. Design Review & PR Quality Gate
+## 6. Flagship Screen Implementation: Command Center
+
+For Phase 2, Ishu and Tanisha should structure the Command Center (`app/(operator)/command-center/page.tsx`) following the modular specification in [`screens/command-center.md`](./screens/command-center.md):
+
+```text
+apps/web/src/
+├── app/(operator)/command-center/
+│   └── page.tsx                         # Viewport container & state integration
+└── features/command-center/
+    ├── components/
+    │   ├── CampusStatusBanner.tsx       # Level 1 Operational state verdict
+    │   ├── CriticalMetricsStrip.tsx     # 4-card KPI strip (tabular-nums)
+    │   ├── SpatialDecisionMap.tsx       # 2D SVG building health schematic + table dual-view
+    │   ├── PriorityIncidentFeed.tsx     # Sorted triage list with direct CTAs
+    │   ├── LiveConditionsSummary.tsx    # Compact Occupancy & Connectivity widgets
+    │   └── RecommendedActionPanel.tsx   # Grounded decision recommendation & trade-off summary
+    └── hooks/
+        └── useCommandCenterState.ts     # Aggregated presentation state hook
+```
+
+---
+
+## 7. Design Review & PR Quality Gate
 
 Every frontend Pull Request must pass the design review checklist before merging into `main`:
 
 ### PR Checklist
 - [ ] **IA Compliance:** Routes and navigation match `INFORMATION-ARCHITECTURE.md` hierarchy.
+- [ ] **Screen Fidelity:** Layout blocks and 4-level information hierarchy match `screens/command-center.md`.
 - [ ] **Zero Magic CSS:** No arbitrary colors (e.g. `bg-[#0a0f1d]`); all styles map to semantic tokens.
 - [ ] **Tabular Metrics:** All metric numbers, capacity values, and coordinates use `font-mono tabular-nums`.
 - [ ] **WCAG 2.1 AA Baseline:** Passes automated axe-core audit with zero errors.
@@ -260,3 +283,4 @@ Every frontend Pull Request must pass the design review checklist before merging
 - [ ] **Visible Focus:** Focus rings are clearly visible on dark surfaces.
 - [ ] **Dual-View Rule:** All spatial maps and graphs offer accessible data table alternatives.
 - [ ] **Reduced Motion:** Verified under `prefers-reduced-motion: reduce`.
+

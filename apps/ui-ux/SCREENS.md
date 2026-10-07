@@ -36,6 +36,8 @@
 
 ### 1.1 Command Center
 
+> **Modular Screen Spec:** See [`screens/command-center.md`](./screens/command-center.md) for full layout blocks, data states, and component contracts.
+
 - **Product Area:** `1. Command Center`
 - **User Goal:** High-level operational surveillance; immediately identify active disruptions, aggregate impact scale, and pending recovery decisions.
 - **Primary Question Answered:** *"What is happening across campus right now and what requires immediate operator attention?"*

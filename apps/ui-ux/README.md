@@ -1,7 +1,7 @@
 # EzyKwelez — UI/UX Workspace & Design Foundation
 
 **UI/UX Owner:** Aile Sharma (`Lead UI/UX Designer & Design System Owner`)  
-**Status:** Phase 1B Finalized  
+**Status:** Phase 2 Finalized  
 **Scope:** Canonical Design System, Information Architecture, Component Specifications, Screen Inventories, and Developer Handoff Contracts.
 
 ---
@@ -22,6 +22,7 @@ EzyKwelez is an operational campus intelligence product. Its mission is to trans
 
 ### 2.2 What Belongs Here
 - Information architecture maps, user journeys, navigation models, and context persistence rules.
+- Modular screen specifications (e.g. `screens/command-center.md`).
 - Design tokens (colors, typography scales, spacing units, elevations, radii, motion timings).
 - Component anatomy, state matrices, and usage specifications.
 - Comprehensive screen inventories and operational workflow definitions.
@@ -57,7 +58,8 @@ EzyKwelez is an operational campus intelligence product. Its mission is to trans
 | [`INFORMATION-ARCHITECTURE.md`](./INFORMATION-ARCHITECTURE.md) | Canonical product mental model, 6 top-level areas, 4-level information hierarchy, user journeys, screen relationship map, and context preservation rules. | Product, Frontend, Designers, QA |
 | [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) | Canonical design tokens, visual language, typography, color semantics, and atomic styling rules. | Frontend Engineers, Designers |
 | [`COMPONENTS.md`](./COMPONENTS.md) | Component inventory with anatomy, variants, states, interactions, accessibility, and usage rules. | Frontend Engineers |
-| [`SCREENS.md`](./SCREENS.md) | Detailed screen-by-screen inventory, user goals, key information hierarchy, and primary actions. | Product, Frontend, QA |
+| [`SCREENS.md`](./SCREENS.md) | Comprehensive 6-area screen inventory, user goals, key information hierarchy, and primary actions. | Product, Frontend, QA |
+| [`screens/command-center.md`](./screens/command-center.md) | Flagship Command Center operational specification, component layout, and state matrices. | Frontend Engineers, QA |
 | [`INTERACTIONS.md`](./INTERACTIONS.md) | Interaction principles for navigation, filtering, graph exploration, simulation, destructive actions, and feedback. | Frontend Engineers, QA |
 | [`RESPONSIVE.md`](./RESPONSIVE.md) | Breakpoint strategies, layout adaptations, responsive tables, side panels, and mobile vs. desktop workflows. | Frontend Engineers |
 | [`ACCESSIBILITY.md`](./ACCESSIBILITY.md) | Production-grade accessibility standards: keyboard navigation, screen reader semantics, contrast, and reduced motion. | Frontend Engineers, QA |
@@ -70,14 +72,12 @@ EzyKwelez is an operational campus intelligence product. Its mission is to trans
 
 1. **Before Structuring App Routes & Layouts:**
    - Refer to [`INFORMATION-ARCHITECTURE.md`](./INFORMATION-ARCHITECTURE.md) for top-level product areas, sub-routes, navigation hierarchy, and context persistence rules.
-2. **Before Building a Component:**
+2. **Before Building Screen Features:**
+   - Refer to modular screen specifications like [`screens/command-center.md`](./screens/command-center.md) for layout blocks, component props, and state matrices.
+3. **Before Building a Component:**
    - Refer to [`COMPONENTS.md`](./COMPONENTS.md) for anatomy, variants, and states (loading, empty, error, disabled, active).
-   - Use the token values in [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) and [`aile/tokens.json`](./aile/tokens.json) rather than hardcoded hex codes or arbitrary pixels.
+   - Use the token values in [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) and [`aile/tokens.json`](./aile/tokens.json).
    - Check [`ACCESSIBILITY.md`](./ACCESSIBILITY.md) for required ARIA roles, keyboard triggers, and focus management.
-3. **Before Building a Screen / Page:**
-   - Refer to [`SCREENS.md`](./SCREENS.md) for information hierarchy, primary action placement, and secondary actions.
-   - Check [`INTERACTIONS.md`](./INTERACTIONS.md) to understand transition flows, simulation feedback loops, and optimistic updates.
-   - Validate responsive requirements across breakpoints using [`RESPONSIVE.md`](./RESPONSIVE.md).
 4. **Before Submitting a PR:**
    - Review against the checklist in [`DEVELOPER-HANDOFF.md`](./DEVELOPER-HANDOFF.md).
 
