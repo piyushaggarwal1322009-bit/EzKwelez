@@ -1,6 +1,10 @@
 /**
  * Tanisha Feature Area Entrypoint
- * Recovery Planning & Simulation Interfaces
+ * Live Campus Conditions & Recovery Planning Interfaces
+ * Owner: Tanisha
  */
 
-export const TANISHA_FEATURE_MODULE = "recovery-and-simulation";
+export const TANISHA_FEATURE_MODULE = "live-campus-and-recovery";
+
+// Re-export Live Campus Conditions feature module
+export * from "./live-campus";
