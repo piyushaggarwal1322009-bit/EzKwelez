@@ -483,17 +483,79 @@ $$\text{Disruption Score} = \sum_{n \in \text{Impacted Nodes}} \left( \text{Crit
 
 ---
 
-## 10. Multi-Objective Recovery Optimizer
+## 10. Incident & Disruption Management Architecture (Phase 5)
+
+Phase 5 establishes the authoritative **Incident Domain** as the primary upstream trigger for dependency graph blast-radius analysis and campus recovery operations.
+
+### 10.1 High-Level Architecture & Domain Boundary
+
+```mermaid
+flowchart TB
+    API["FastAPI Presentation (/incidents)"] --> IncidentApp["IncidentApplicationService"]
+    IncidentApp --> StateMachine["IncidentStateMachine (Rules & Invariants)"]
+    IncidentApp --> IncidentRepoPort["IncidentRepository (Port)"]
+    IncidentApp --> EventPubPort["IncidentEventPublisher (Port)"]
+    IncidentRepoPort --> InMemoryRepo["InMemoryIncidentRepository (Postgres Future)"]
+    EventPubPort --> EventLedger["InMemoryIncidentEventPublisher (Outbox Future)"]
+    IncidentApp --> HandoffContract["IncidentToImpactHandoff (Contract)"]
+    HandoffContract -.->|Triggers| ImpactAnalysis["ImpactAnalysisEngine (Phase 4)"]
+```
+
+### 10.2 Incident Lifecycle State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> reported: create_incident()
+    reported --> triaged: Operator / Sensor Triage
+    reported --> closed: False Alarm / Duplicate
+    triaged --> investigating: Dispatched / Acknowledged
+    triaged --> active: Confirmed Outage / Disruption
+    triaged --> closed: Dismissed
+    investigating --> active: Verified Live Disruption
+    investigating --> mitigated: Workaround Deployed
+    investigating --> resolved: Fixed
+    investigating --> closed: Closed
+    active --> mitigated: Temporary Bypass
+    active --> resolved: Service Restored
+    mitigated --> active: Recurrence / Escalation
+    mitigated --> resolved: Permanent Fix
+    resolved --> closed: Post-Incident Review Complete
+    resolved --> investigating: Reopened
+    closed --> investigating: Reopened
+```
+
+### 10.3 Incident to Impact Analysis Handoff Pipeline
+
+```mermaid
+flowchart LR
+    Incident["Authoritative Incident\n(id, rootNodeId, type, severity)"] --> StateMachine["StateMachine\n(Transition: ACTIVE)"]
+    StateMachine --> IncidentActivatedEvent["IncidentActivatedEvent\n(Domain Event)"]
+    IncidentActivatedEvent --> HandoffContract["IncidentToImpactHandoff\n(rootNodeId, failureType, severity)"]
+    HandoffContract --> ImpactEngine["ImpactAnalysisService\n(Deterministic BFS Traversal)"]
+    ImpactEngine --> DependencyGraph["DependencyGraphTopology\n(Nodes & Edges)"]
+    ImpactEngine --> CampusContext["CampusContextProvider\n(Live Facilities & Telemetry)"]
+    ImpactEngine --> ImpactReport["Structured ImpactReport\n(Impacted Nodes & Locations)"]
+```
+
+### 10.4 Canonical Entities and Audit Model
+
+1. **Incident (`Incident`):** Authoritative entity owning identity (`id`), classification (`type`), severity (`severity`), lifecycle (`status`), source (`source`), references (`location_id`, `root_node_id`), timeline timestamps (`started_at`, `detected_at`, `acknowledged_at`, `resolved_at`, `closed_at`), and data provenance mode (`data_mode`).
+2. **Audit Ledger (`IncidentUpdate`):** Immutable append-only records capturing transition deltas (`status_before`, `status_after`, `severity_before`, `severity_after`), actor identity (`created_by`), notes (`message`), and metadata snapshots.
+3. **Idempotency Guard:** Handled via `Idempotency-Key` header with repository deduplication to protect against automated IoT sensor replay storms and network retry duplicate tickets.
+
+---
+
+## 11. Multi-Objective Recovery Optimizer
 
 When an incident causes room unavailability, the **Recovery Planning Engine** searches the campus graph for feasible replacements.
 
-### 10.1 Hard Feasibility Constraints:
+### 11.1 Hard Feasibility Constraints:
 1. $\text{Capacity}(\text{Candidate Room}) \ge \text{Headcount}(\text{Displaced Class})$
 2. $\text{Equipment}(\text{Candidate Room}) \supseteq \text{Required Equipment}(\text{Displaced Class})$
 3. $\text{Schedule}(\text{Candidate Room}) \cap \text{Time Window} = \emptyset$ (No double booking)
 4. $\text{Accessibility}(\text{Candidate Room}) = \text{True}$ (If required by class)
 
-### 10.2 Objective Function (Minimization):
+### 11.2 Objective Function (Minimization):
 $$\text{Cost}(P) = w_1 \cdot \Delta \text{DisplacedStudents} + w_2 \cdot \text{WalkingDistanceMeters} + w_3 \cdot \text{CapacityWaste} + w_4 \cdot \text{ScheduleDelayMinutes}$$
 
 * **Default Weights:** $w_1 = 0.40$, $w_2 = 0.25$, $w_3 = 0.20$, $w_4 = 0.15$.
@@ -501,7 +563,7 @@ $$\text{Cost}(P) = w_1 \cdot \Delta \text{DisplacedStudents} + w_2 \cdot \text{W
 
 ---
 
-## 11. AI Architecture & Explanation Boundary
+## 12. AI Architecture & Explanation Boundary
 
 The AI Operations Analyst is strictly isolated as a read-only summarization layer.
 
@@ -531,7 +593,7 @@ sequenceDiagram
 
 ---
 
-## 12. Security Architecture & Threat Model
+## 13. Security Architecture & Threat Model
 
 EzyKwelez adheres to the **OWASP API Security Top 10**:
 
@@ -548,7 +610,7 @@ EzyKwelez adheres to the **OWASP API Security Top 10**:
 
 ---
 
-## 13. Reliability, Resilience & Graceful Degradation
+## 14. Reliability, Resilience & Graceful Degradation
 
 ```text
 Incoming Telemetry Request
@@ -569,7 +631,7 @@ Incoming Telemetry Request
 
 ---
 
-## 14. Observability & Monitoring
+## 15. Observability & Monitoring
 
 Every HTTP transaction generates a structured log record:
 
@@ -578,21 +640,21 @@ Every HTTP transaction generates a structured log record:
   "timestamp": "2026-10-07T12:00:01.120Z",
   "requestId": "req_01h8x9p4k2",
   "method": "POST",
-  "path": "/api/incidents/inc_01/analyze",
+  "path": "/incidents/inc_01/transitions",
   "statusCode": 200,
-  "durationMs": 42.6,
+  "durationMs": 35.2,
   "actorId": "usr_operator_88",
   "campusId": "cmp_main",
-  "domainOperation": "BLAST_RADIUS_EVALUATION"
+  "domainOperation": "INCIDENT_STATUS_TRANSITION"
 }
 ```
 
 * **Zero PII Logging:** Student names, passwords, authorization bearer headers, and raw credentials are scrubbed prior to log formatting.
-* **Health Check Endpoints:** `/api/health` performs active database pinging and reports sub-system readiness.
+* **Health Check Endpoints:** `/health` performs active database pinging and reports sub-system readiness.
 
 ---
 
-## 15. Deployment & CI/CD Topology
+## 16. Deployment & CI/CD Topology
 
 ```mermaid
 graph LR
@@ -621,13 +683,14 @@ graph LR
 
 ---
 
-## 16. Contract Ownership Matrix
+## 17. Contract Ownership Matrix
 
 | System Component | Frontend (`apps/web`) | Backend (`apps/api`) | Database (`supabase`) | AI Provider |
 | :--- | :--- | :--- | :--- | :--- |
 | **Presentation & UI Formatting** | **Owner** | Consumer | N/A | N/A |
 | **Client Navigation & State** | **Owner** | N/A | N/A | N/A |
 | **Domain Logic & Business Rules** | Formatter | **Authoritative Owner** | N/A | N/A |
+| **Incident Lifecycle & State Machine** | Formatter | **Authoritative Owner** | Persistence | N/A |
 | **Graph Traversal & Blast Radius** | Display | **Authoritative Owner** | N/A | N/A |
 | **Recovery Optimization** | Display | **Authoritative Owner** | N/A | N/A |
 | **Persistence & Constraints** | N/A | Client | **Authoritative Owner** | N/A |
@@ -637,7 +700,7 @@ graph LR
 
 ---
 
-## 17. Architecture Decision Records (ADR) Index
+## 18. Architecture Decision Records (ADR) Index
 
 The key architectural decisions governing this platform are formalized in `docs/adr/`:
 
@@ -651,4 +714,10 @@ The key architectural decisions governing this platform are formalized in `docs/
 8. [ADR-008: Impact Analysis Service Boundary & Structured Report Contract](file:///docs/adr/ADR-008-impact-analysis-boundary.md)
 9. [ADR-009: Graph Traversal Abstraction & Traversal Policy](file:///docs/adr/ADR-009-graph-traversal-abstraction.md)
 10. [ADR-010: Impact Analysis Data Provenance & Stale Telemetry Handling](file:///docs/adr/ADR-010-impact-data-provenance.md)
+11. [ADR-011: Incident Lifecycle State Machine & Transition Rules](file:///docs/adr/ADR-011-incident-state-machine.md)
+12. [ADR-012: Incident Update Audit History Model](file:///docs/adr/ADR-012-incident-audit-history.md)
+13. [ADR-013: Incident Domain Events & Asynchronous Boundary](file:///docs/adr/ADR-013-incident-domain-events.md)
+14. [ADR-014: Incident Idempotency & Duplicate Request Mitigation](file:///docs/adr/ADR-014-incident-idempotency.md)
+15. [ADR-015: Incident to Impact Analysis Handoff Contract](file:///docs/adr/ADR-015-incident-impact-analysis-handoff.md)
+
 

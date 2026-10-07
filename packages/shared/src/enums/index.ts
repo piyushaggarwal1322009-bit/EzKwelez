@@ -4,19 +4,57 @@
  */
 
 export enum IncidentSeverity {
-  LOW = "LOW",
-  MEDIUM = "MEDIUM",
-  HIGH = "HIGH",
-  CRITICAL = "CRITICAL",
+  LOW = "low",
+  MODERATE = "moderate",
+  HIGH = "high",
+  CRITICAL = "critical",
 }
 
 export enum IncidentStatus {
-  REPORTED = "REPORTED",
-  INVESTIGATING = "INVESTIGATING",
-  ACTIVE = "ACTIVE",
-  MITIGATED = "MITIGATED",
-  RESOLVED = "RESOLVED",
-  CANCELLED = "CANCELLED",
+  REPORTED = "reported",
+  TRIAGED = "triaged",
+  INVESTIGATING = "investigating",
+  ACTIVE = "active",
+  MITIGATED = "mitigated",
+  RESOLVED = "resolved",
+  CLOSED = "closed",
+}
+
+export enum IncidentType {
+  POWER_OUTAGE = "power_outage",
+  NETWORK_OUTAGE = "network_outage",
+  WATER_OUTAGE = "water_outage",
+  FIRE = "fire",
+  EQUIPMENT_FAILURE = "equipment_failure",
+  BUILDING_ISSUE = "building_issue",
+  SECURITY_EVENT = "security_event",
+  CAPACITY_ISSUE = "capacity_issue",
+  MAINTENANCE = "maintenance",
+  ENVIRONMENTAL = "environmental",
+  OTHER = "other",
+}
+
+export enum IncidentSource {
+  MANUAL = "manual",
+  SENSOR = "sensor",
+  PROVIDER = "provider",
+  MONITORING = "monitoring",
+  SYSTEM = "system",
+  IMPORTED = "imported",
+  UNKNOWN = "unknown",
+}
+
+export enum IncidentUpdateType {
+  CREATED = "created",
+  STATUS_CHANGED = "status_changed",
+  SEVERITY_CHANGED = "severity_changed",
+  LOCATION_UPDATED = "location_updated",
+  ROOT_NODE_UPDATED = "root_node_updated",
+  COMMENT_ADDED = "comment_added",
+  ACKNOWLEDGED = "acknowledged",
+  MITIGATED = "mitigated",
+  RESOLVED = "resolved",
+  CLOSED = "closed",
 }
 
 export enum EntityType {

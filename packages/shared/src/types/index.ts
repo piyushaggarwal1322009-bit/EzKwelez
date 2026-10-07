@@ -6,6 +6,9 @@
 import {
   IncidentSeverity,
   IncidentStatus,
+  IncidentType,
+  IncidentSource,
+  IncidentUpdateType,
   EntityType,
   RecoveryPlanStatus,
   DataMode,
@@ -213,7 +216,77 @@ export interface ImpactAnalysisRequest {
 }
 
 // ---------------------------------------------------------------------------
-// Incidents & Recovery Contracts
+// Incident & Disruption Management Contracts (Phase 5)
+// ---------------------------------------------------------------------------
+
+export interface Incident {
+  id: string;
+  title: string;
+  description: string;
+  type: IncidentType;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  source: IncidentSource;
+  locationId?: string;
+  rootNodeId?: string;
+  startedAt: string;
+  detectedAt: string;
+  acknowledgedAt?: string;
+  resolvedAt?: string;
+  closedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  dataMode: DataMode;
+  metadata?: Record<string, unknown>;
+}
+
+export interface IncidentUpdate {
+  id: string;
+  incidentId: string;
+  type: IncidentUpdateType;
+  message: string;
+  statusBefore?: IncidentStatus;
+  statusAfter?: IncidentStatus;
+  severityBefore?: IncidentSeverity;
+  severityAfter?: IncidentSeverity;
+  createdBy: string;
+  createdAt: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CreateIncidentRequest {
+  title: string;
+  description?: string;
+  type: IncidentType;
+  severity: IncidentSeverity;
+  source?: IncidentSource;
+  locationId?: string;
+  rootNodeId?: string;
+  startedAt?: string;
+  detectedAt?: string;
+  dataMode?: DataMode;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TransitionIncidentRequest {
+  targetStatus: IncidentStatus;
+  reason: string;
+  actorId?: string;
+  newSeverity?: IncidentSeverity;
+  metadata?: Record<string, unknown>;
+}
+
+export interface IncidentToImpactHandoff {
+  incidentId: string;
+  rootNodeId: string;
+  failureType: FailureType;
+  severity: Criticality;
+  occurredAt: string;
+  dataMode: DataMode;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy / Phase 1 Compatibility Summaries
 // ---------------------------------------------------------------------------
 
 export interface IncidentSummary {
@@ -222,11 +295,11 @@ export interface IncidentSummary {
   description: string;
   severity: IncidentSeverity;
   status: IncidentStatus;
-  affectedEntityId: string;
-  affectedEntityType: EntityType;
+  affectedEntityId?: string;
+  affectedEntityType?: EntityType;
   startedAt: string;
   resolvedAt?: string;
-  reportedAt: string;
+  reportedAt?: string;
   dataMode: DataMode;
 }
 

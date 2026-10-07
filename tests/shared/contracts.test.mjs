@@ -5,6 +5,11 @@ import {
   ConnectivityQuality,
   DependencyType,
   DependencyCriticality,
+  IncidentType,
+  IncidentSeverity,
+  IncidentStatus,
+  IncidentSource,
+  IncidentUpdateType,
   classifyOccupancy,
   classifyConnectivity,
   OCCUPANCY_THRESHOLDS,
@@ -49,6 +54,18 @@ assert.equal(DependencyType.POWERED_BY, "POWERED_BY");
 assert.equal(DependencyType.LOCATED_IN, "LOCATED_IN");
 assert.equal(DependencyType.REQUIRES_RESOURCE, "REQUIRES_RESOURCE");
 assert.equal(DependencyCriticality.CRITICAL, "CRITICAL");
-console.log("✓ Enums and provenance types validated successfully.");
+
+// 4. Test Phase 5 Incident Enums
+assert.equal(IncidentType.POWER_OUTAGE, "power_outage");
+assert.equal(IncidentType.NETWORK_OUTAGE, "network_outage");
+assert.equal(IncidentSeverity.CRITICAL, "critical");
+assert.equal(IncidentSeverity.HIGH, "high");
+assert.equal(IncidentStatus.REPORTED, "reported");
+assert.equal(IncidentStatus.ACTIVE, "active");
+assert.equal(IncidentStatus.RESOLVED, "resolved");
+assert.equal(IncidentSource.MANUAL, "manual");
+assert.equal(IncidentSource.SENSOR, "sensor");
+assert.equal(IncidentUpdateType.STATUS_CHANGED, "status_changed");
+console.log("✓ Phase 5 Incident enums and lifecycle types validated successfully.");
 
 console.log("\nAll @ezykwelez/shared tests passed successfully!");
