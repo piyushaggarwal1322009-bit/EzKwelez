@@ -6,6 +6,7 @@ import {
   DataMode,
   FailureType,
   Incident,
+  IncidentAssessment,
   IncidentSeverity,
   IncidentSource,
   IncidentStatus,
@@ -99,6 +100,10 @@ export const incidentService = {
       const match = MOCK_INCIDENTS.find((i) => i.id === id);
       return match || MOCK_INCIDENTS[0];
     }
+  },
+
+  async getAssessment(id: string): Promise<IncidentAssessment> {
+    return await apiClient.get<IncidentAssessment>(`/incidents/${id}/assessment`);
   },
 
   async createIncident(

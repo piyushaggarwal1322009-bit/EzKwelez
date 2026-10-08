@@ -82,6 +82,7 @@ declare module 'lucide-react' {
   export const Signal: LucideIcon;
   export const Sliders: LucideIcon;
   export const Sparkles: LucideIcon;
+  export const Sun: LucideIcon;
   export const TrendingUp: LucideIcon;
   export const User: LucideIcon;
   export const UserCheck: LucideIcon;
@@ -93,4 +94,5 @@ declare module 'lucide-react' {
   export const XCircle: LucideIcon;
   export const Zap: LucideIcon;
   export const ZapOff: LucideIcon;
+  export const Moon: LucideIcon;
 }

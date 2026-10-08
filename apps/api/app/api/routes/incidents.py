@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 import uuid
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
-from app.api.dependencies import get_development_principal, get_incident_service
+from app.api.dependencies import get_development_principal, get_incident_service, get_assessment_service
 from app.application.incident_service import (
     AffectedEntityNotFoundError,
     CrossCampusEntityError,
@@ -16,6 +16,7 @@ from app.application.incident_service import (
     IncidentLocationNotFoundError,
     InvalidAffectedEntityTypeError,
 )
+from app.application.assessment_service import AssessmentService
 from app.domain.campus.models import DataMode
 from app.domain.incidents.models import (
     Incident,
@@ -38,6 +39,7 @@ from app.schemas.incident import (
     IncidentUpdateDTO,
     TransitionIncidentRequestDTO,
 )
+from app.schemas.assessment import IncidentAssessmentDTO
 
 router = APIRouter(prefix="/incidents", tags=["Incidents & Disruption Management"])
 
@@ -102,6 +104,59 @@ def map_update_to_dto(upd: IncidentUpdate) -> IncidentUpdateDTO:
         createdAt=upd.created_at,
         metadata=upd.metadata,
     )
+
+
+from app.domain.assessment.models import IncidentAssessment, AffectedEntity, BlastRadiusResult, ImpactAssessment
+from app.schemas.assessment import AffectedEntityDTO, BlastRadiusResultDTO, ImpactAssessmentDTO, IncidentAssessmentDTO
+
+def map_affected_entity_domain_to_dto(entity: AffectedEntity) -> AffectedEntityDTO:
+    return AffectedEntityDTO(
+        entityId=entity.entity_id,
+        entityType=entity.entity_type,
+        entityName=entity.entity_name,
+        entityCode=entity.entity_code,
+        depth=entity.depth,
+        isDirect=entity.is_direct,
+        parentEntityId=entity.parent_entity_id,
+        dependencyType=entity.dependency_type,
+        dependencyStrength=entity.dependency_strength,
+        reason=entity.reason,
+        criticality=entity.criticality.value,
+        locationId=entity.location_id,
+        path=entity.path
+    )
+
+def map_blast_radius_to_dto(blast: BlastRadiusResult) -> BlastRadiusResultDTO:
+    return BlastRadiusResultDTO(
+        directEntities=[map_affected_entity_domain_to_dto(e) for e in blast.direct_entities],
+        transitiveEntities=[map_affected_entity_domain_to_dto(e) for e in blast.transitive_entities],
+        totalAffectedCount=blast.total_affected_count,
+        maximumDepth=blast.maximum_depth,
+        generatedAt=blast.generated_at
+    )
+
+def map_impact_to_dto(impact: ImpactAssessment) -> ImpactAssessmentDTO:
+    return ImpactAssessmentDTO(
+        totalImpactScore=impact.total_impact_score,
+        impactCategory=impact.impact_category,
+        affectedLocations=impact.affected_locations,
+        affectedResourcesCount=impact.affected_resources_count,
+        affectedServicesCount=impact.affected_services_count,
+        criticalDependencyCount=impact.critical_dependency_count,
+        explanationMetadata=impact.explanation_metadata,
+        generatedAt=impact.generated_at
+    )
+
+def map_assessment_to_dto(assessment: IncidentAssessment) -> IncidentAssessmentDTO:
+    return IncidentAssessmentDTO(
+        assessmentId=assessment.assessment_id,
+        incident=map_incident_to_dto(assessment.incident),
+        blastRadius=map_blast_radius_to_dto(assessment.blast_radius),
+        impact=map_impact_to_dto(assessment.impact),
+        dataMode=assessment.data_mode.value,
+        generatedAt=assessment.generated_at
+    )
+
 
 
 @router.post(
@@ -436,4 +491,28 @@ async def get_impact_handoff(
             dataMode=handoff.data_mode,
         ),
         meta=generate_meta(data_mode=handoff.data_mode.value),
+    )
+
+
+@router.get(
+    "/{incident_id}/assessment",
+    response_model=ApiResponseEnvelope[IncidentAssessmentDTO],
+    summary="Get incident blast radius and deterministic impact assessment",
+)
+async def get_assessment(
+    incident_id: str,
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
+    assessment_service: AssessmentService = Depends(get_assessment_service),
+):
+    try:
+        assessment = await assessment_service.generate_assessment(
+            incident_id=incident_id, 
+            campus_id=principal.campus_id
+        )
+    except IncidentNotFoundError as error:
+        raise HTTPException(status_code=404, detail={"error": {"code": "INCIDENT_NOT_FOUND", "message": str(error)}})
+        
+    return ApiResponseEnvelope(
+        data=map_assessment_to_dto(assessment),
+        meta=generate_meta(data_mode=assessment.data_mode.value)
     )

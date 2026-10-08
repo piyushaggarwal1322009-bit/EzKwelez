@@ -44,13 +44,13 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-xl border p-5 backdrop-blur-sm shadow-sm transition-all hover:border-slate-700",
+        "rounded-lg border p-5 shadow-sm transition-[border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-600",
         variantBorders[variant],
         className
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-slate-400 tracking-wide uppercase">{title}</span>
+        <span className="text-xs font-semibold text-slate-300">{title}</span>
         {Icon && (
           <div className={cn("p-2 rounded-lg", iconColors[variant])}>
             <Icon className="w-4 h-4" />
@@ -58,9 +58,9 @@ export function MetricCard({
         )}
       </div>
 
-      <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-white">{value}</span>
-        {subvalue && <span className="text-xs text-slate-400">{subvalue}</span>}
+      <div className="mt-4">
+        <span className="block text-3xl font-bold tabular-nums leading-none text-white">{value}</span>
+        {subvalue && <span className="mt-2 block text-sm leading-snug text-slate-400">{subvalue}</span>}
       </div>
 
       {trend && (

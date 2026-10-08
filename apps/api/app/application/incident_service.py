@@ -257,7 +257,11 @@ class IncidentApplicationService:
         node = await self._graph_repository.get_node_by_id(node_id)
         if node is None:
             raise AffectedEntityNotFoundError(f"Campus entity '{node_id}' was not found.")
-        if node.type not in {NodeType.BUILDING, NodeType.ROOM, NodeType.RESOURCE, NodeType.SERVICE}:
+        if node.type not in {
+            NodeType.BUILDING, NodeType.ROOM, NodeType.RESOURCE, NodeType.SERVICE,
+            NodeType.INFRASTRUCTURE, NodeType.UTILITY, NodeType.NETWORK,
+            NodeType.SYSTEM, NodeType.OPERATION,
+        }:
             raise InvalidAffectedEntityTypeError(
                 f"Graph node type '{node.type.value}' cannot be attached as an affected campus entity."
             )

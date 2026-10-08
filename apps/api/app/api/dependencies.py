@@ -9,6 +9,7 @@ from app.application.impact_service import (
     DefaultImpactAnalysisService,
 )
 from app.application.incident_service import IncidentApplicationService
+from app.application.assessment_service import AssessmentService
 from app.config import Settings, get_settings
 from app.domain.campus.ports import CampusRepository, ConnectivityProvider, OccupancyProvider
 from app.domain.graph.ports import CampusContextProvider, DependencyGraphRepository
@@ -147,6 +148,17 @@ def get_campus_state_service(
     )
 
 
+def get_assessment_service(
+    incident_service: IncidentApplicationService = Depends(get_incident_service),
+    graph_repo: DependencyGraphRepository = Depends(get_graph_repository),
+) -> AssessmentService:
+    """Provide AssessmentService instance."""
+    return AssessmentService(
+        incident_service=incident_service,
+        graph_repository=graph_repo,
+    )
+
+
 def get_current_user(
     authorization: Optional[str] = Header(None, alias="Authorization"),
 ) -> AuthenticatedUser:
@@ -165,4 +177,3 @@ def get_current_user(
             detail=str(exc),
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
-

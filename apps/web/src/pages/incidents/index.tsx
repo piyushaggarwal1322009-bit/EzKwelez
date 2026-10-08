@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast-provider";
 import { incidentService } from "@/services/incident-service";
 import { campusService } from "@/services/campus-service";
 import { graphService } from "@/services/graph-service";
@@ -35,6 +36,7 @@ import {
 } from "lucide-react";
 
 export default function IncidentsPage() {
+  const { showToast } = useToast();
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
   const [locations, setLocations] = React.useState<CampusLocation[]>([]);
   const [nodes, setNodes] = React.useState<DependencyNode[]>([]);
@@ -87,9 +89,16 @@ export default function IncidentsPage() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createForm.title.trim() || !(createForm.description || "").trim()) return;
+    if (!createForm.title.trim() || !(createForm.description || "").trim()) {
+      showToast({ title: "Complete the required fields", variant: "warning" });
+      return;
+    }
     if (affectedNodeIds.length === 0) {
-      alert("Select at least one directly affected campus entity.");
+      showToast({
+        title: "Select an affected entity",
+        description: "Choose at least one directly affected campus entity before submitting.",
+        variant: "warning",
+      });
       return;
     }
 
@@ -130,8 +139,13 @@ export default function IncidentsPage() {
         dataMode: DataMode.SIMULATED,
         estimatedDurationMinutes: 90,
       });
+      showToast({ title: "Incident report submitted", description: created.title, variant: "success" });
     } catch (err: any) {
-      alert(`Incident creation failed: ${err.message}`);
+      showToast({
+        title: "Incident report failed",
+        description: err.message || "The incident could not be submitted.",
+        variant: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -179,6 +193,7 @@ export default function IncidentsPage() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
           <input
             type="text"
+            aria-label="Search incidents"
             placeholder="Search incident title, description, or type..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -188,14 +203,14 @@ export default function IncidentsPage() {
 
         <div className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0">
           {/* Status Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-lg text-xs">
+          <div role="group" aria-label="Filter incidents by status" className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-lg text-xs">
             <span className="text-[11px] text-slate-400 px-1">Status:</span>
             {["all", "active", "investigating", "triaged", "resolved", "closed", "cancelled"].map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setStatusFilter(s)}
-                className={`px-2 py-1 rounded text-xs capitalize whitespace-nowrap font-medium transition-colors ${
+                className={`min-h-11 px-3 py-1 rounded text-xs capitalize whitespace-nowrap font-medium transition-colors ${
                   statusFilter === s ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -205,14 +220,14 @@ export default function IncidentsPage() {
           </div>
 
           {/* Severity Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-lg text-xs">
+          <div role="group" aria-label="Filter incidents by severity" className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-lg text-xs">
             <span className="text-[11px] text-slate-400 px-1">Severity:</span>
             {["all", "critical", "high", "moderate", "low", "info"].map((sev) => (
               <button
                 key={sev}
                 type="button"
                 onClick={() => setSeverityFilter(sev)}
-                className={`px-2 py-1 rounded text-xs capitalize whitespace-nowrap font-medium transition-colors ${
+                className={`min-h-11 px-3 py-1 rounded text-xs capitalize whitespace-nowrap font-medium transition-colors ${
                   severityFilter === sev ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -349,8 +364,9 @@ export default function IncidentsPage() {
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Incident Title *</label>
+            <label htmlFor="incident-title" className="block text-slate-300 font-medium mb-1">Incident Title *</label>
             <input
+              id="incident-title"
               type="text"
               required
               placeholder="e.g., Main Power Substation Feeder Trip"
@@ -361,8 +377,9 @@ export default function IncidentsPage() {
           </div>
 
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Description *</label>
+            <label htmlFor="incident-description" className="block text-slate-300 font-medium mb-1">Description *</label>
             <textarea
+              id="incident-description"
               required
               rows={3}
               placeholder="Describe what failed, observed symptoms, and immediate impact..."
@@ -374,8 +391,9 @@ export default function IncidentsPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Disruption Type</label>
+              <label htmlFor="incident-type" className="block text-slate-300 font-medium mb-1">Disruption Type</label>
               <select
+                id="incident-type"
                 value={createForm.type}
                 onChange={(e) => setCreateForm({ ...createForm, type: e.target.value as IncidentType })}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 capitalize"
@@ -389,8 +407,9 @@ export default function IncidentsPage() {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Severity Scale</label>
+              <label htmlFor="incident-severity" className="block text-slate-300 font-medium mb-1">Severity Scale</label>
               <select
+                id="incident-severity"
                 value={createForm.severity}
                 onChange={(e) => setCreateForm({ ...createForm, severity: e.target.value as IncidentSeverity })}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 uppercase"
@@ -406,8 +425,9 @@ export default function IncidentsPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Affected Location (Optional)</label>
+              <label htmlFor="incident-location" className="block text-slate-300 font-medium mb-1">Affected Location (Optional)</label>
               <select
+                id="incident-location"
                 value={createForm.locationId || ""}
                 onChange={(e) => setCreateForm({ ...createForm, locationId: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
@@ -422,8 +442,9 @@ export default function IncidentsPage() {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Root Topology Node (Optional)</label>
+              <label htmlFor="incident-root-node" className="block text-slate-300 font-medium mb-1">Root Topology Node (Optional)</label>
               <select
+                id="incident-root-node"
                 value={createForm.rootNodeId || ""}
                 onChange={(e) => setCreateForm({ ...createForm, rootNodeId: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
@@ -439,8 +460,9 @@ export default function IncidentsPage() {
           </div>
 
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Estimated Duration (minutes)</label>
+            <label htmlFor="incident-duration" className="block text-slate-300 font-medium mb-1">Estimated Duration (minutes)</label>
             <input
+              id="incident-duration"
               type="number"
               min={1}
               value={createForm.estimatedDurationMinutes || ""}

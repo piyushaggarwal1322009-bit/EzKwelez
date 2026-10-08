@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface TabsContextValue {
   activeTab: string;
   setActiveTab: (value: string) => void;
+  baseId: string;
 }
 
 const TabsContext = React.createContext<TabsContextValue | undefined>(undefined);
@@ -22,6 +23,7 @@ export function Tabs({
   className?: string;
 }) {
   const [active, setActive] = React.useState(value || defaultValue || "");
+  const baseId = React.useId().replace(/:/g, "");
 
   const currentTab = value !== undefined ? value : active;
   const handleTabChange = (val: string) => {
@@ -30,7 +32,7 @@ export function Tabs({
   };
 
   return (
-    <TabsContext.Provider value={{ activeTab: currentTab, setActiveTab: handleTabChange }}>
+    <TabsContext.Provider value={{ activeTab: currentTab, setActiveTab: handleTabChange, baseId }}>
       <div className={cn("space-y-4", className)}>{children}</div>
     </TabsContext.Provider>
   );
@@ -45,6 +47,8 @@ export function TabsList({
 }) {
   return (
     <div
+      role="tablist"
+      aria-orientation="horizontal"
       className={cn(
         "inline-flex items-center gap-1 p-1 bg-slate-900/90 border border-slate-800 rounded-lg text-slate-400 select-none overflow-x-auto max-w-full",
         className
@@ -72,9 +76,31 @@ export function TabsTrigger({
   return (
     <button
       type="button"
+      role="tab"
+      id={`${context.baseId}-tab-${value.replace(/[^a-zA-Z0-9_-]/g, "-")}`}
+      aria-controls={`${context.baseId}-panel-${value.replace(/[^a-zA-Z0-9_-]/g, "-")}`}
+      aria-selected={isActive}
+      tabIndex={isActive ? 0 : -1}
       onClick={() => context.setActiveTab(value)}
+      onKeyDown={(event) => {
+        const tabs = Array.from(
+          event.currentTarget.closest('[role="tablist"]')?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []
+        );
+        const currentIndex = tabs.indexOf(event.currentTarget);
+        let nextIndex = currentIndex;
+
+        if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+        else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        else if (event.key === "Home") nextIndex = 0;
+        else if (event.key === "End") nextIndex = tabs.length - 1;
+        else return;
+
+        event.preventDefault();
+        tabs[nextIndex]?.focus();
+        tabs[nextIndex]?.click();
+      }}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-all focus-visible:outline-none disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none disabled:opacity-50",
         isActive
           ? "bg-slate-800 text-white shadow-sm border border-slate-700/80"
           : "hover:text-slate-200 hover:bg-slate-800/40",
@@ -100,5 +126,16 @@ export function TabsContent({
 
   if (context.activeTab !== value) return null;
 
-  return <div className={cn("mt-2 outline-none", className)}>{children}</div>;
+  const panelId = value.replace(/[^a-zA-Z0-9_-]/g, "-");
+  return (
+    <div
+      role="tabpanel"
+      id={`${context.baseId}-panel-${panelId}`}
+      aria-labelledby={`${context.baseId}-tab-${panelId}`}
+      tabIndex={0}
+      className={cn("mt-2 outline-none", className)}
+    >
+      {children}
+    </div>
+  );
 }
