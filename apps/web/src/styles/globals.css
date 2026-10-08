@@ -26,6 +26,8 @@
   --color-success: #70d6a5;
   --color-warning: #f3c36f;
   --color-danger: #ff8179;
+  --color-danger-action: #c63d39;
+  --color-success-action: #16794f;
   --color-info: #80c9ed;
   --color-success-text-rgb: 176 241 206;
   --color-success-surface-rgb: 24 49 38;
@@ -87,6 +89,8 @@
   --color-success: #16784c;
   --color-warning: #8a5700;
   --color-danger: #b12d2b;
+  --color-danger-action: #a52826;
+  --color-success-action: #176a43;
   --color-info: #17668a;
   --color-success-text-rgb: 20 104 65;
   --color-success-surface-rgb: 232 244 235;

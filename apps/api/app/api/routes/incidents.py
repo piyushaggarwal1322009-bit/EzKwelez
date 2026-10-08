@@ -40,6 +40,10 @@ from app.schemas.incident import (
     TransitionIncidentRequestDTO,
 )
 from app.schemas.assessment import IncidentAssessmentDTO
+from app.schemas.recovery import RecoveryActionDTO, RecoveryOptionDTO, RecoveryPlanDTO, ConstraintViolationDTO
+from app.api.dependencies import get_recovery_plan_service
+from app.application.recovery_plan_service import RecoveryPlanService
+from app.domain.recovery.models import RecoveryOption, RecoveryAction, ConstraintViolation
 
 router = APIRouter(prefix="/incidents", tags=["Incidents & Disruption Management"])
 
@@ -516,3 +520,80 @@ async def get_assessment(
         data=map_assessment_to_dto(assessment),
         meta=generate_meta(data_mode=assessment.data_mode.value)
     )
+
+
+def map_recovery_action_to_dto(action: RecoveryAction) -> RecoveryActionDTO:
+    dur = action.estimated_duration
+    return RecoveryActionDTO(
+        actionId=action.action_id,
+        actionType=action.action_type.value if hasattr(action.action_type, 'value') else action.action_type,
+        targetEntity=action.target_entity,
+        description=action.description,
+        sourceEntity=action.source_entity,
+        estimatedDurationMinutes=dur.value if dur else None,
+        durationStatus="known" if dur else "unknown",
+    )
+
+
+def map_violation_to_dto(v: ConstraintViolation) -> ConstraintViolationDTO:
+    return ConstraintViolationDTO(
+        type=v.type.value if hasattr(v.type, 'value') else v.type,
+        message=v.message,
+        actionId=v.action_id,
+        constraintId=v.constraint_id,
+    )
+
+
+def map_option_to_dto(opt: RecoveryOption) -> RecoveryOptionDTO:
+    return RecoveryOptionDTO(
+        id=opt.id,
+        title=opt.title,
+        description=opt.description,
+        type=opt.type.value if hasattr(opt.type, 'value') else opt.type,
+        feasibility=opt.feasibility.value if hasattr(opt.feasibility, 'value') else opt.feasibility,
+        actions=[map_recovery_action_to_dto(a) for a in opt.actions],
+        violations=[map_violation_to_dto(v) for v in opt.violations],
+        affectedLocations=list(opt.affected_locations),
+        affectedNodes=list(opt.affected_nodes),
+        rationale=opt.rationale,
+        actionCount=len(opt.actions),
+        violationCount=len(opt.violations),
+    )
+
+
+@router.get(
+    "/{incident_id}/recovery-plans",
+    response_model=ApiResponseEnvelope[RecoveryPlanDTO],
+    summary="Generate deterministic recovery plans for an incident",
+)
+async def get_recovery_plans(
+    incident_id: str,
+    principal: DevelopmentPrincipal = Depends(get_development_principal),
+    recovery_service: RecoveryPlanService = Depends(get_recovery_plan_service),
+    incident_service: IncidentApplicationService = Depends(get_incident_service),
+):
+    try:
+        incident = await incident_service.get_incident(incident_id)
+    except IncidentNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"error": {"code": "INCIDENT_NOT_FOUND", "message": str(e)}})
+
+    plan = await recovery_service.generate_recovery_plans(incident)
+
+    feasible = sum(1 for o in plan.options if getattr(o.feasibility, 'value', o.feasibility) == "feasible")
+    infeasible = sum(1 for o in plan.options if getattr(o.feasibility, 'value', o.feasibility) == "infeasible")
+    unknown = len(plan.options) - feasible - infeasible
+
+    plan_dto = RecoveryPlanDTO(
+        id=plan.id,
+        incidentId=plan.incident_id,
+        impactAnalysisId=plan.impact_analysis_id,
+        status=plan.status.value if hasattr(plan.status, 'value') else plan.status,
+        options=[map_option_to_dto(o) for o in plan.options],
+        dataMode=plan.data_mode.value if hasattr(plan.data_mode, 'value') else plan.data_mode,
+        generatedAt=plan.generated_at,
+        feasibleCount=feasible,
+        infeasibleCount=infeasible,
+        insufficientDataCount=unknown,
+        warnings=list(plan.warnings),
+    )
+    return ApiResponseEnvelope(data=plan_dto, meta=generate_meta(data_mode=plan.data_mode.value))

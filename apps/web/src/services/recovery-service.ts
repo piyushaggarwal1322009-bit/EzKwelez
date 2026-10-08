@@ -246,8 +246,8 @@ const MOCK_RECOVERY_PLANS: Record<string, RecoveryPlan> = {
 export const recoveryService = {
   async getPlansForIncident(incidentId: string): Promise<RecoveryPlan[]> {
     try {
-      const plans = await apiClient.get<RecoveryPlan[]>(`/incidents/${incidentId}/recovery-plans`);
-      return plans;
+      const plan = await apiClient.get<RecoveryPlan>(`/incidents/${incidentId}/recovery-plans`);
+      return plan ? [plan] : [];
     } catch {
       // Return typed simulated fallback for verified development & demonstration
       const matched = Object.values(MOCK_RECOVERY_PLANS).filter(

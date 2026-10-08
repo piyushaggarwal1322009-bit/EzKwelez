@@ -10,6 +10,9 @@ from app.application.impact_service import (
 )
 from app.application.incident_service import IncidentApplicationService
 from app.application.assessment_service import AssessmentService
+from app.application.recovery_candidate_generator import RecoveryCandidateGenerator
+from app.application.recovery_plan_validator import RecoveryPlanValidator
+from app.application.recovery_plan_service import RecoveryPlanService
 from app.config import Settings, get_settings
 from app.domain.campus.ports import CampusRepository, ConnectivityProvider, OccupancyProvider
 from app.domain.graph.ports import CampusContextProvider, DependencyGraphRepository
@@ -156,6 +159,19 @@ def get_assessment_service(
     return AssessmentService(
         incident_service=incident_service,
         graph_repository=graph_repo,
+    )
+
+
+def get_recovery_plan_service(
+    assessment_service: AssessmentService = Depends(get_assessment_service),
+    graph_repo: DependencyGraphRepository = Depends(get_graph_repository),
+) -> RecoveryPlanService:
+    """Provide RecoveryPlanService instance."""
+    return RecoveryPlanService(
+        assessment_service=assessment_service,
+        graph_repository=graph_repo,
+        candidate_generator=RecoveryCandidateGenerator(),
+        plan_validator=RecoveryPlanValidator(),
     )
 
 
