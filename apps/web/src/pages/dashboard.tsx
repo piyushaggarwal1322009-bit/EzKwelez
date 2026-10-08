@@ -118,7 +118,7 @@ export default function DashboardPage() {
     <AppLayout
       title="Command Center"
       description="Campus status, active disruptions, and recovery priorities."
-      campusStatus={campusStatus}
+      campusStatus={isLoading || error ? undefined : campusStatus}
       dataMode={activeDataMode}
       onRefresh={handleRefresh}
       isRefreshing={isRefreshing}
