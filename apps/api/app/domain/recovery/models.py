@@ -31,6 +31,19 @@ class RecoveryOptionType(str, Enum):
     OTHER = "other"
 
 
+class RecoveryActionType(str, Enum):
+    RESTORE = "restore"
+    SWITCH = "switch"
+    REROUTE = "reroute"
+    ACTIVATE_BACKUP = "activate_backup"
+    ISOLATE = "isolate"
+    TRANSFER = "transfer"
+    REPLACE = "replace"
+    MAINTENANCE = "maintenance"
+    MANUAL_WORKAROUND = "manual_workaround"
+    TEMPORARY_SERVICE_CHANGE = "temporary_service_change"
+
+
 class Feasibility(str, Enum):
     FEASIBLE = "feasible"
     CONDITIONALLY_FEASIBLE = "conditionally_feasible"
@@ -60,6 +73,17 @@ class ConstraintType(str, Enum):
 class ConstraintSeverity(str, Enum):
     HARD = "hard"
     SOFT = "soft"
+
+
+class ConstraintViolationType(str, Enum):
+    RESOURCE_UNAVAILABLE = "resource_unavailable"
+    TARGET_UNAVAILABLE = "target_unavailable"
+    PREREQUISITE_NOT_MET = "prerequisite_not_met"
+    CONFLICTING_ACTION = "conflicting_action"
+    CAPACITY_INSUFFICIENT = "capacity_insufficient"
+    UNSUPPORTED_CAPABILITY = "unsupported_capability"
+    MISSING_INFORMATION = "missing_information"
+    OTHER = "other"
 
 
 class ResourceType(str, Enum):
@@ -179,6 +203,15 @@ class RecoveryConstraint:
 
 
 @dataclass(frozen=True)
+class ConstraintViolation:
+    """Represents a failed constraint validation."""
+    type: ConstraintViolationType
+    message: str
+    action_id: Optional[str] = None
+    constraint_id: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class PlanningAssumption:
     """Explicit assumption made by the planning engine."""
     description: str
@@ -200,6 +233,19 @@ class PlanningObjective:
 # ------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
+class RecoveryAction:
+    """Structured recovery action representing something the operator could perform."""
+    action_id: str
+    action_type: RecoveryActionType
+    target_entity: str
+    description: str
+    source_entity: Optional[str] = None
+    required_resources: List[ResourceRequirement] = field(default_factory=list)
+    estimated_duration: Optional[EstimatedRecoveryTime] = None
+    prerequisites: List[RecoveryPrerequisite] = field(default_factory=list)
+    constraints: List[RecoveryConstraint] = field(default_factory=list)
+
+@dataclass(frozen=True)
 class RecoveryOption:
     """Structured, machine-readable recovery candidate."""
     id: str
@@ -215,6 +261,8 @@ class RecoveryOption:
     affected_nodes: List[str] = field(default_factory=list)
     risks: List[RecoveryRisk] = field(default_factory=list)
     tradeoffs: List[RecoveryTradeoff] = field(default_factory=list)
+    actions: List[RecoveryAction] = field(default_factory=list)
+    violations: List[ConstraintViolation] = field(default_factory=list)
     confidence: ConfidenceLevel = ConfidenceLevel.MEDIUM
     rank: Optional[int] = None
     rationale: str = ""
