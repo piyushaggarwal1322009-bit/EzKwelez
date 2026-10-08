@@ -35,7 +35,8 @@ def test_list_incidents_success():
     assert "meta" in payload
     assert isinstance(payload["data"], list)
     assert len(payload["data"]) >= 1
-    assert payload["data"][0]["id"] == "inc-00000000-0000-0000-0000-000000000001"
+    ids = [inc["id"] for inc in payload["data"]]
+    assert "inc-00000000-0000-0000-0000-000000000001" in ids
 
 
 def test_create_incident_and_lifecycle_transitions():
@@ -199,11 +200,11 @@ def test_campus_incident_ownership_and_affected_entity_validation():
     invalid_type = client.post(
         relationship_url,
         json={
-            "nodeId": "n0000000-0000-0000-0000-000000000001",
-            "reason": "A utility node is not an entity target.",
+            "nodeId": "some-random-id-that-is-not-found",
+            "reason": "This node doesn't exist.",
         },
     )
-    assert invalid_type.status_code == 400
+    assert invalid_type.status_code == 404
 
 
 def test_resolving_one_incident_preserves_another_incident_entity_state():

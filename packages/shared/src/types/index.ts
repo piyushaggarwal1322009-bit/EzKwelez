@@ -255,6 +255,50 @@ export interface ImpactAnalysisRequest {
 // Incident & Disruption Management Contracts (Phase 5)
 // ---------------------------------------------------------------------------
 
+export interface AffectedEntity {
+  entityId: string;
+  entityType: string;
+  entityName: string;
+  entityCode?: string;
+  depth: number;
+  isDirect: boolean;
+  parentEntityId?: string;
+  dependencyType?: string;
+  dependencyStrength?: string;
+  reason: string;
+  criticality: Criticality | string;
+  locationId?: string;
+  path: string[];
+}
+
+export interface BlastRadiusResult {
+  directEntities: AffectedEntity[];
+  transitiveEntities: AffectedEntity[];
+  totalAffectedCount: number;
+  maximumDepth: number;
+  generatedAt: string;
+}
+
+export interface ImpactAssessment {
+  totalImpactScore: number;
+  impactCategory: string;
+  affectedLocations: string[];
+  affectedResourcesCount: number;
+  affectedServicesCount: number;
+  criticalDependencyCount: number;
+  explanationMetadata: Record<string, unknown>;
+  generatedAt: string;
+}
+
+export interface IncidentAssessment {
+  assessmentId: string;
+  incident: Incident;
+  blastRadius: BlastRadiusResult;
+  impact: ImpactAssessment;
+  dataMode: DataMode;
+  generatedAt: string;
+}
+
 export interface Incident {
   id: string;
   campusId: string;

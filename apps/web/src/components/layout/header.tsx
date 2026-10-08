@@ -8,12 +8,15 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
+  Sun,
+  Moon,
   Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataProvenanceBadge } from "@/components/ui/data-provenance-badge";
 import { DataMode } from "@ezykwelez/shared";
 import { GlobalSearchDialog } from "./global-search-dialog";
+import { useTheme } from "./theme-provider";
 
 interface HeaderProps {
   campusStatus?: "operational" | "attention" | "disrupted";
@@ -25,7 +28,7 @@ interface HeaderProps {
 }
 
 export function Header({
-  campusStatus = "operational",
+  campusStatus,
   lastRefreshed = new Date(),
   onRefresh,
   isRefreshing = false,
@@ -34,6 +37,7 @@ export function Header({
 }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [timeAgo, setTimeAgo] = React.useState("Just now");
+  const { theme, toggleTheme } = useTheme();
 
   React.useEffect(() => {
     const updateTimeAgo = () => {
@@ -60,7 +64,7 @@ export function Header({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const statusConfig = {
+  const statusConfig = campusStatus ? {
     operational: {
       label: "Campus Operational",
       color: "text-emerald-400 bg-emerald-950/60 border-emerald-800",
@@ -76,9 +80,9 @@ export function Header({
       color: "text-red-400 bg-red-950/60 border-red-800 animate-pulse",
       icon: ShieldAlert,
     },
-  }[campusStatus];
+  }[campusStatus] : null;
 
-  const StatusIcon = statusConfig.icon;
+  const StatusIcon = statusConfig?.icon;
 
   return (
     <>
@@ -93,7 +97,7 @@ export function Header({
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-400 bg-slate-900 border border-slate-800 rounded-lg hover:border-slate-700 hover:text-slate-200 transition-colors w-48 sm:w-64"
+            className="flex min-h-11 items-center gap-2 px-3 py-1.5 text-xs text-slate-400 bg-slate-900 border border-slate-800 rounded-lg hover:border-slate-700 hover:text-slate-200 transition-colors w-28 sm:w-64"
           >
             <Search className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">Search campus, incidents, nodes...</span>
@@ -106,18 +110,32 @@ export function Header({
         {/* Right: Operational Status, Provenance Mode, Refresh, Notification */}
         <div className="flex items-center gap-3 sm:gap-4">
           {/* Global Campus Status Pill */}
-          <div
-            className={cn(
-              "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold select-none",
-              statusConfig.color
-            )}
-          >
-            <StatusIcon className="w-3.5 h-3.5 shrink-0" />
-            <span>{statusConfig.label}</span>
-          </div>
+          {statusConfig && StatusIcon && (
+            <div
+              role="status"
+              className={cn(
+                "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold select-none",
+                statusConfig.color
+              )}
+            >
+              <StatusIcon aria-hidden="true" className="w-3.5 h-3.5 shrink-0" />
+              <span>{statusConfig.label}</span>
+            </div>
+          )}
 
           {/* Data Provenance Mode */}
           <DataProvenanceBadge mode={dataMode} size="sm" />
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            className="h-11 w-11 text-slate-400 hover:text-slate-100"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </Button>
 
           {/* Refresh Action */}
           <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -129,7 +147,7 @@ export function Header({
                 onClick={onRefresh}
                 disabled={isRefreshing}
                 title="Refresh live telemetry and incidents"
-                className="h-8 w-8 text-slate-400 hover:text-white"
+                className="h-11 w-11 text-slate-400 hover:text-white"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", isRefreshing && "animate-spin text-blue-400")} />
               </Button>

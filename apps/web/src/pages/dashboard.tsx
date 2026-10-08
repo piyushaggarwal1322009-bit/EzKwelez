@@ -95,6 +95,7 @@ export default function DashboardPage() {
   );
 
   const primaryIncident = activeIncidents.length > 0 ? activeIncidents[0] : incidents[0] || null;
+  const primaryIncidentIsActive = activeIncidents.some((incident) => incident.id === primaryIncident?.id);
 
   const campusStatus = activeIncidents.some((i) => i.severity === IncidentSeverity.CRITICAL)
     ? "disrupted"
@@ -115,8 +116,8 @@ export default function DashboardPage() {
 
   return (
     <AppLayout
-      title="Operational Command Center"
-      description="Real-time campus operational decision control center: active disruptions, blast radius mapping, and recovery evaluation."
+      title="Command Center"
+      description="Campus status, active disruptions, and recovery priorities."
       campusStatus={campusStatus}
       dataMode={activeDataMode}
       onRefresh={handleRefresh}
@@ -124,21 +125,15 @@ export default function DashboardPage() {
       lastRefreshed={lastRefreshed}
     >
       <PageHeader
-        title="Operational Command Center"
-        description="Unified decision cockpit answering what is happening, what is affected, and what action to execute next."
+        title="Command Center"
+        description="Campus status, active disruptions, and recovery priorities."
         badge={<DataProvenanceBadge mode={activeDataMode} />}
         actions={
           <div className="flex items-center gap-2">
             <Link href="/incidents">
-              <Button variant="destructive" size="sm" className="gap-1.5 shadow-sm text-xs">
+              <Button variant="primary" size="sm" className="gap-1.5 shadow-sm text-xs">
                 <ShieldAlert className="w-3.5 h-3.5" />
                 Report Disruption
-              </Button>
-            </Link>
-            <Link href="/campus">
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs text-cyan-300 border-cyan-800/80 bg-cyan-950/20">
-                <Building2 className="w-3.5 h-3.5" />
-                Campus Intelligence
               </Button>
             </Link>
           </div>
@@ -174,7 +169,7 @@ export default function DashboardPage() {
         />
       ) : isLoading ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div data-scroll-reveal className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-28 w-full" />
             ))}
@@ -187,7 +182,7 @@ export default function DashboardPage() {
       ) : (
         <div className="space-y-6">
           {/* 1. SYSTEM STATE METRICS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div data-scroll-reveal className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               title="System Operating State"
               value={campusStatus.toUpperCase()}
@@ -236,18 +231,18 @@ export default function DashboardPage() {
 
           {/* 2. WHAT IS HAPPENING? — ACTIVE INCIDENT COMMAND HERO */}
           {primaryIncident && (
-            <Card className="border-red-900/60 bg-red-950/20 shadow-xl">
-              <CardHeader className="pb-3 border-b border-red-900/40">
+            <Card data-scroll-reveal className={primaryIncidentIsActive ? "border-red-900/60 bg-red-950/20" : "border-slate-800 bg-slate-900/70"}>
+              <CardHeader className={`pb-3 border-b ${primaryIncidentIsActive ? "border-red-900/40" : "border-slate-800"}`}>
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2.5">
-                    <span className="p-2 rounded-lg bg-red-950 text-red-300 border border-red-800 shadow-sm">
+                      <span className={`p-2 rounded-md border ${primaryIncidentIsActive ? "bg-red-950 text-red-300 border-red-800" : "bg-slate-800 text-slate-300 border-slate-700"}`}>
                       <ShieldAlert className="w-5 h-5" />
                     </span>
                     <div>
-                      <CardTitle className="text-base text-red-100 flex items-center gap-2">
-                        <span>Active Disruption: {primaryIncident.title}</span>
+                      <CardTitle className={`text-base flex items-center gap-2 ${primaryIncidentIsActive ? "text-red-100" : "text-slate-100"}`}>
+                        <span>{primaryIncidentIsActive ? "Active disruption" : "Latest incident"}: {primaryIncident.title}</span>
                       </CardTitle>
-                      <CardDescription className="text-red-300/80 font-mono text-[11px]">
+                      <CardDescription className={`font-mono text-xs ${primaryIncidentIsActive ? "text-red-300/80" : "text-slate-400"}`}>
                         ID: {primaryIncident.id} • Detected:{" "}
                         {new Date(primaryIncident.detectedAt).toLocaleTimeString([], {
                           hour: "2-digit",
@@ -257,8 +252,20 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="critical">CRITICAL PRIORITY</Badge>
-                    <StatusIndicator status={primaryIncident.status} showPulse />
+                    <Badge
+                      variant={
+                        primaryIncident.severity === IncidentSeverity.CRITICAL
+                          ? "critical"
+                          : primaryIncident.severity === IncidentSeverity.HIGH
+                          ? "high"
+                          : primaryIncident.severity === IncidentSeverity.MODERATE
+                          ? "moderate"
+                          : "low"
+                      }
+                    >
+                      {primaryIncident.severity.toUpperCase()} PRIORITY
+                    </Badge>
+                    <StatusIndicator status={primaryIncident.status} showPulse={primaryIncidentIsActive} />
                   </div>
                 </div>
               </CardHeader>
@@ -271,8 +278,8 @@ export default function DashboardPage() {
 
                 {/* Lifecycle Progress Stepper */}
                 <div className="space-y-1.5 pt-1">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
-                    Incident Resolution Lifecycle Stage:
+                    <span className="text-xs font-medium text-slate-400 block">
+                    Incident lifecycle
                   </span>
                   <IncidentLifecycleStepper currentStatus={primaryIncident.status} />
                 </div>
@@ -280,27 +287,27 @@ export default function DashboardPage() {
                 {/* Primary Decision Attributes */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-900/80 p-3 rounded-lg border border-slate-800">
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase">Root Dependency</span>
-                    <span className="font-semibold text-rose-300 font-mono truncate block">
-                      {primaryIncident.rootNodeId || "Main Substation Grid B"}
+                    <span className="text-xs text-slate-400 block">Root system</span>
+                    <span className="font-semibold text-slate-100 font-mono truncate block">
+                      {primaryIncident.rootNodeId || "Not provided"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase">Affected Facility</span>
-                    <span className="font-semibold text-slate-200">
-                      Ramanujan Block B
+                    <span className="text-xs text-slate-400 block">Location</span>
+                    <span className="font-semibold text-slate-100">
+                      {conditionsData?.locations.find((item) => item.location.id === primaryIncident.locationId)?.location.name || "Not specified"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase">Ingestion Source</span>
-                    <span className="font-semibold text-slate-200 uppercase">
-                      {primaryIncident.source}
+                    <span className="text-xs text-slate-400 block">Reported by</span>
+                    <span className="font-semibold text-slate-100 uppercase">
+                      {primaryIncident.source.replaceAll("_", " ")}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase">Decision Status</span>
-                    <span className="font-semibold text-amber-300">
-                      Recovery Formulated
+                    <span className="text-xs text-slate-400 block">Current status</span>
+                    <span className="font-semibold text-slate-100 capitalize">
+                      {primaryIncident.status.replaceAll("_", " ")}
                     </span>
                   </div>
                 </div>
@@ -309,9 +316,9 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-red-950 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Link href={`/incidents/${primaryIncident.id}`}>
-                      <Button variant="primary" size="sm" className="gap-1.5 text-xs bg-red-600 hover:bg-red-500 shadow-sm">
+                      <Button variant="destructive" size="sm" className="gap-1.5 text-xs shadow-sm">
                         <ShieldAlert className="w-3.5 h-3.5" />
-                        Investigate Incident &rarr;
+                        {primaryIncidentIsActive ? "Investigate incident" : "Review incident"} <ArrowRight className="h-4 w-4" />
                       </Button>
                     </Link>
                     <Link
@@ -340,7 +347,7 @@ export default function DashboardPage() {
           )}
 
           {/* 3 & 4. WHAT IS AFFECTED & WHAT SHOULD I DO NEXT? */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div data-scroll-reveal className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Impact & Blast Radius Snapshot (6 cols) */}
             <div className="lg:col-span-6 space-y-4">
               <Card className="h-full border-slate-800 bg-slate-900/70 shadow-lg flex flex-col justify-between">
@@ -349,37 +356,30 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <GitFork className="w-4 h-4 text-cyan-400" />
-                        <CardTitle className="text-sm">Cascading Blast Radius Snapshot</CardTitle>
+                        <CardTitle className="text-base">Incident impact</CardTitle>
                       </div>
-                      <Badge variant="outline" className="text-[10px] font-mono">
-                        BFS Multi-Hop
+                      <Badge variant="outline" className="text-xs">
+                        {primaryIncident?.severity.toUpperCase() || "NO INCIDENT"}
                       </Badge>
                     </div>
                     <CardDescription>
-                      Downstream propagation originating from root system fault
+                      {primaryIncident?.title || "No incident selected"}
                     </CardDescription>
                   </CardHeader>
 
                   <CardContent className="pt-4 space-y-3">
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                        <span className="text-xl font-bold font-mono text-rose-400 block">3</span>
-                        <span className="text-[10px] text-slate-400 uppercase">Disrupted Systems</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
+                        <span className="block text-xs text-slate-400">Root system</span>
+                        <span className="mt-1 block break-words font-mono text-slate-100">
+                          {primaryIncident?.rootNodeId || "Not provided"}
+                        </span>
                       </div>
-                      <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                        <span className="text-xl font-bold font-mono text-amber-400 block">2</span>
-                        <span className="text-[10px] text-slate-400 uppercase">Affected Facilities</span>
-                      </div>
-                      <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                        <span className="text-xl font-bold font-mono text-cyan-400 block">+3</span>
-                        <span className="text-[10px] text-slate-400 uppercase">Max Cascade Depth</span>
-                      </div>
-                    </div>
-
-                    <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 space-y-1">
-                      <div className="font-semibold text-white">Downstream Critical Path:</div>
-                      <div className="font-mono text-[11px] text-slate-400">
-                        Substation Grid B &rarr; Block B Structure &rarr; Laser Spectrometer B201 &rarr; PHYS-101 Practicum
+                      <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
+                        <span className="block text-xs text-slate-400">Incident status</span>
+                        <span className="mt-1 block capitalize text-slate-100">
+                          {primaryIncident?.status.replaceAll("_", " ") || "Not available"}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -387,12 +387,12 @@ export default function DashboardPage() {
 
                 <CardFooter className="pt-3 border-t border-slate-800">
                   <Link
-                    href={`/impact?incidentId=${primaryIncident?.id}&rootNodeId=${primaryIncident?.rootNodeId || ""}`}
+                    href={primaryIncident ? `/impact?incidentId=${primaryIncident.id}&rootNodeId=${primaryIncident.rootNodeId || ""}` : "/impact"}
                     className="w-full"
                   >
                     <Button variant="secondary" size="sm" className="w-full gap-1.5 text-xs text-cyan-300">
                       <AlertOctagon className="w-3.5 h-3.5" />
-                      Open Interactive Blast Radius Map &rarr;
+                      Open impact analysis <ArrowRight className="w-3.5 h-3.5" />
                     </Button>
                   </Link>
                 </CardFooter>
@@ -409,8 +409,8 @@ export default function DashboardPage() {
                         <Sparkles className="w-4 h-4 text-amber-400" />
                         <CardTitle className="text-sm">Recovery Decision Engine</CardTitle>
                       </div>
-                      <Badge variant="warning" className="text-[10px] font-mono">
-                        {recoveryPlan?.status.toUpperCase() || "PLAN FORMULATED"}
+                      <Badge variant={recoveryPlan ? "warning" : "neutral"} className="text-xs">
+                        {recoveryPlan?.status.replaceAll("_", " ").toUpperCase() || "NO PLAN"}
                       </Badge>
                     </div>
                     <CardDescription>
@@ -456,7 +456,7 @@ export default function DashboardPage() {
                 </div>
 
                 <CardFooter className="pt-3 border-t border-slate-800 flex items-center gap-2">
-                  <Link href={`/recovery?incidentId=${primaryIncident?.id}`} className="w-1/2">
+                  <Link href={primaryIncident ? `/recovery?incidentId=${primaryIncident.id}` : "/recovery"} className="w-1/2">
                     <Button variant="primary" size="sm" className="w-full gap-1.5 text-xs">
                       <Scale className="w-3.5 h-3.5" />
                       Compare Options
@@ -479,7 +479,7 @@ export default function DashboardPage() {
           </div>
 
           {/* 5. WHAT NEEDS ATTENTION? — CAMPUS SNAPSHOT */}
-          <Card className="border-slate-800 bg-slate-900/60 shadow-lg">
+          <Card data-scroll-reveal className="border-slate-800 bg-slate-900/60 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-800">
               <div>
                 <CardTitle className="text-sm">Facilities Needing Operational Attention</CardTitle>
@@ -545,39 +545,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* 6. QUICK ACTIONS BAR */}
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/90 shadow-lg flex items-center justify-between flex-wrap gap-3">
-            <div className="text-xs font-semibold text-slate-300">
-              Direct Operational Navigation:
-            </div>
-            <div className="flex items-center gap-2 flex-wrap text-xs">
-              <Link href="/incidents">
-                <Button variant="outline" size="sm" className="gap-1 text-xs">
-                  <ShieldAlert className="w-3.5 h-3.5 text-red-400" /> All Incidents
-                </Button>
-              </Link>
-              <Link href="/dependencies">
-                <Button variant="outline" size="sm" className="gap-1 text-xs">
-                  <GitFork className="w-3.5 h-3.5 text-blue-400" /> Dependency Graph
-                </Button>
-              </Link>
-              <Link href="/impact">
-                <Button variant="outline" size="sm" className="gap-1 text-xs">
-                  <AlertOctagon className="w-3.5 h-3.5 text-cyan-400" /> Blast Radius
-                </Button>
-              </Link>
-              <Link href="/recovery">
-                <Button variant="outline" size="sm" className="gap-1 text-xs">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Recovery Plans
-                </Button>
-              </Link>
-              <Link href="/simulation">
-                <Button variant="outline" size="sm" className="gap-1 text-xs">
-                  <Activity className="w-3.5 h-3.5 text-purple-400" /> Simulation Drills
-                </Button>
-              </Link>
-            </div>
-          </div>
         </div>
       )}
     </AppLayout>

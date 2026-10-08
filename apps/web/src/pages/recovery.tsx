@@ -39,8 +39,10 @@ import {
   Zap,
 } from "lucide-react";
 import { DecisionLoopBanner, RecoveryComparisonTable } from "@/components/decision";
+import { useToast } from "@/components/ui/toast-provider";
 
 export default function RecoveryPlanningPage() {
+  const { showToast } = useToast();
   const router = useRouter();
   const { incidentId: initialIncId } = router.query;
 
@@ -110,8 +112,13 @@ export default function RecoveryPlanningPage() {
       setPlan(updated);
       setIsReviewOpen(false);
       setReviewNotes("");
+      showToast({ title: "Review decision saved", variant: "success" });
     } catch (err: any) {
-      alert(`Review submission failed: ${err.message}`);
+      showToast({
+        title: "Review decision failed",
+        description: err.message || "The review could not be saved.",
+        variant: "error",
+      });
     } finally {
       setIsSubmittingReview(false);
     }
@@ -530,8 +537,9 @@ export default function RecoveryPlanningPage() {
       >
         <form onSubmit={handleReviewSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Decision Outcome *</label>
+            <label htmlFor="review-outcome" className="block text-slate-300 font-medium mb-1">Decision Outcome *</label>
             <select
+              id="review-outcome"
               value={reviewStatus}
               onChange={(e) => setReviewStatus(e.target.value as PlanStatus)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
@@ -543,8 +551,9 @@ export default function RecoveryPlanningPage() {
           </div>
 
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Review Notes & Operational Instructions</label>
+            <label htmlFor="review-notes" className="block text-slate-300 font-medium mb-1">Review Notes & Operational Instructions</label>
             <textarea
+              id="review-notes"
               rows={3}
               placeholder="e.g., Authorized tie-breaker failover to Substation Grid A. Facilities dispatch instructed..."
               value={reviewNotes}
@@ -554,7 +563,7 @@ export default function RecoveryPlanningPage() {
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-800">
-            <Button type="button" variant="outline" size="sm" onClick={() => setIsReviewOpen(false)}>
+            <Button type="button" variant="outline" size="sm" data-dialog-initial-focus onClick={() => setIsReviewOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm" isLoading={isSubmittingReview}>

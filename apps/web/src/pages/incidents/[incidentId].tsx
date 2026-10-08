@@ -11,6 +11,7 @@ import { Timeline, TimelineItem } from "@/components/ui/timeline";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Dialog } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast-provider";
 import { incidentService } from "@/services/incident-service";
 import { campusService } from "@/services/campus-service";
 import { graphService } from "@/services/graph-service";
@@ -21,6 +22,7 @@ import {
   EntityOperationalState,
   Incident,
   IncidentAffectedEntity,
+  IncidentAssessment,
   IncidentStatus,
   IncidentUpdate,
 } from "@ezykwelez/shared";
@@ -40,6 +42,7 @@ import {
 } from "lucide-react";
 
 export default function IncidentDetailPage() {
+  const { showToast } = useToast();
   const router = useRouter();
   const { incidentId } = router.query;
 
@@ -49,6 +52,7 @@ export default function IncidentDetailPage() {
   const [entityStates, setEntityStates] = React.useState<EntityOperationalState[]>([]);
   const [location, setLocation] = React.useState<CampusLocation | null>(null);
   const [rootNode, setRootNode] = React.useState<DependencyNode | null>(null);
+  const [assessment, setAssessment] = React.useState<IncidentAssessment | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -80,6 +84,14 @@ export default function IncidentDetailPage() {
           setLocation(locs.find((l) => l.id === incRes.locationId) || null);
         });
       }
+      
+      try {
+        const assessmentRes = await incidentService.getAssessment(incidentId);
+        setAssessment(assessmentRes);
+      } catch (err) {
+        console.warn("Could not load assessment for incident", err);
+      }
+      
       if (incRes.rootNodeId) {
         graphService.getNode(incRes.rootNodeId).then((node) => {
           setRootNode(node);
@@ -112,8 +124,13 @@ export default function IncidentDetailPage() {
       // Refresh audit updates
       const newUpdates = await incidentService.getIncidentUpdates(incident.id);
       setUpdates(newUpdates);
+      showToast({ title: "Incident status updated", variant: "success" });
     } catch (err: any) {
-      alert(`Transition rejected by state machine: ${err.message}`);
+      showToast({
+        title: "Status change was rejected",
+        description: err.message || "The requested transition was not accepted.",
+        variant: "error",
+      });
     } finally {
       setIsTransitioning(false);
     }
@@ -329,6 +346,66 @@ export default function IncidentDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {assessment && (
+            <Card className="border-cyan-900/40 bg-cyan-950/10">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-cyan-400 flex items-center gap-2">
+                      <AlertOctagon className="w-5 h-5" /> Blast Radius & Impact Assessment
+                    </CardTitle>
+                    <CardDescription>Real-time calculation of downstream propagation effects</CardDescription>
+                  </div>
+                  <Badge variant="outline" className="border-cyan-800 text-cyan-300">
+                    Score: {assessment.impact.totalImpactScore}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                    <div className="text-xs text-slate-500 mb-1">Direct Entities</div>
+                    <div className="text-xl font-bold text-slate-200">{assessment.blastRadius.directEntities.length}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                    <div className="text-xs text-slate-500 mb-1">Transitive Entities</div>
+                    <div className="text-xl font-bold text-slate-200">{assessment.blastRadius.transitiveEntities.length}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                    <div className="text-xs text-slate-500 mb-1">Affected Locations</div>
+                    <div className="text-xl font-bold text-slate-200">{assessment.impact.affectedLocations.length}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                    <div className="text-xs text-slate-500 mb-1">Max Graph Depth</div>
+                    <div className="text-xl font-bold text-slate-200">{assessment.blastRadius.maximumDepth}</div>
+                  </div>
+                </div>
+                
+                <div className="pt-2">
+                  <h4 className="text-sm font-semibold text-slate-300 mb-2">Transitive Blast Radius</h4>
+                  {assessment.blastRadius.transitiveEntities.length === 0 ? (
+                    <p className="text-xs text-slate-500">No transitive dependencies affected.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {assessment.blastRadius.transitiveEntities.map(entity => (
+                        <div key={entity.entityId} className="flex flex-col sm:flex-row sm:items-start gap-2 border-l-2 border-cyan-800 pl-3 py-1">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-200">{entity.entityName}</p>
+                            <p className="text-[11px] text-slate-500 font-mono">Depth {entity.depth} · {entity.entityType.toUpperCase()}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{entity.reason}</p>
+                          </div>
+                          <span className="shrink-0 text-[10px] uppercase font-bold text-cyan-500 bg-cyan-950/50 px-2 py-0.5 rounded">
+                            {entity.criticality}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Cross-Domain Reference Links */}
           <Card>

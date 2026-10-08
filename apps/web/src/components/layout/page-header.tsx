@@ -26,7 +26,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={cn("space-y-2 pb-6 border-b border-slate-800/80 mb-6", className)}>
+    <div className={cn("space-y-3 pb-5 border-b border-slate-800/80 mb-6", className)}>
       {/* Breadcrumbs */}
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-slate-400">
@@ -41,7 +41,7 @@ export function PageHeader({
                   {crumb.label}
                 </Link>
               ) : (
-                <span className="text-slate-200 font-medium">{crumb.label}</span>
+                <span aria-current="page" className="text-slate-200 font-medium">{crumb.label}</span>
               )}
             </React.Fragment>
           ))}
@@ -52,10 +52,10 @@ export function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">{title}</h1>
+            <h1 className="text-2xl font-bold text-white leading-tight">{title}</h1>
             {badge}
           </div>
-          {description && <p className="text-xs sm:text-sm text-slate-400 max-w-3xl leading-relaxed">{description}</p>}
+          {description && <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">{description}</p>}
         </div>
 
         {actions && <div className="flex items-center gap-2.5 shrink-0 flex-wrap">{actions}</div>}
